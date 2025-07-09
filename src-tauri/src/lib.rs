@@ -1,5 +1,6 @@
-mod router;
+mod domain;
 
+use domain::router;
 use std::sync::{Arc, Mutex};
 
 use rspc_tauri;

@@ -1,4 +1,8 @@
+pub mod bookmark_router;
+pub mod groups_router;
+pub mod organization_router;
 pub mod user;
+pub mod workspace_router;
 
 use std::{
     env,
