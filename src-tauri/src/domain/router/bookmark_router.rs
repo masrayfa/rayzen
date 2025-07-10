@@ -5,17 +5,6 @@ use crate::{
 use rspc::{Router, RouterBuilder};
 use uuid::Uuid;
 
-// Helper function untuk async operations
-fn execute_async<T, F>(future: F) -> Result<T, rspc::Error>
-where
-    F: std::future::Future<Output = Result<T, String>>,
-{
-    match tokio::runtime::Handle::current().block_on(future) {
-        Ok(result) => Ok(result),
-        Err(e) => Err(rspc::Error::new(rspc::ErrorCode::InternalServerError, e)),
-    }
-}
-
 pub fn create_bookmark_router() -> RouterBuilder<ContextRouter> {
     Router::<ContextRouter>::new()
         .query("list", |t| {
