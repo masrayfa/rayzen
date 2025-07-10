@@ -1,10 +1,11 @@
 use crate::domain::util;
 
 use serde::{Deserialize, Serialize};
+use specta::Type;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BookMark {
+#[derive(Type, Debug, Clone, Serialize, Deserialize)]
+pub struct Bookmark {
     pub base_entity: util::BaseEntity,
     pub name: String,
     pub url: String,

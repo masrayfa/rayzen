@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use uuid::Uuid;
 
 #[async_trait]
-pub trait GroupRepository: Send + Sync {
+pub trait GroupService: Send + Sync {
     async fn create_group(&self, group: Groups) -> Result<Groups, String>;
     async fn get_group_by_id(&self, id: Uuid) -> Result<Groups, String>;
     async fn update_group(&self, group: Groups) -> Result<Groups, String>;
@@ -12,16 +12,16 @@ pub trait GroupRepository: Send + Sync {
     async fn list_groups(&self) -> Result<Vec<Groups>, String>;
 }
 
-pub struct GroupRepositoryImpl {}
+pub struct GroupsServiceImpl {}
 
-impl GroupRepositoryImpl {
+impl GroupsServiceImpl {
     pub fn new() -> Self {
-        GroupRepositoryImpl {}
+        GroupsServiceImpl {}
     }
 }
 
 #[async_trait]
-impl GroupRepository for GroupRepositoryImpl {
+impl GroupService for GroupsServiceImpl {
     async fn create_group(&self, group: Groups) -> Result<Groups, String> {
         todo!()
     }

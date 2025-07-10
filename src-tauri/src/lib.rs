@@ -12,10 +12,7 @@ pub async fn run() {
 
     tauri::Builder::default()
         .plugin(rspc_tauri::plugin(router.arced(), move |_app_handle| {
-            router::ContextRouter {
-                session_id: None,
-                message: Arc::new(Mutex::new("Hello World".to_string())),
-            }
+            router::ContextRouter::new()
         }))
         .run(tauri::generate_context!())
         .expect("Error while running Tauri App");
