@@ -1,7 +1,11 @@
-use crate::domain::entities::bookmark::Bookmark;
+use crate::domain::dto::bookmark::Bookmark;
 
 use async_trait::async_trait;
 use uuid::Uuid;
+
+// Import SeaORM entities
+use entity::prelude::*;
+use sea_orm::*;
 
 #[async_trait]
 pub trait BookmarkService: Send + Sync {

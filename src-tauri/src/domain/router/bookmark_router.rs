@@ -1,61 +1,50 @@
-use crate::{
-    domain::{entities::bookmark::Bookmark, service::bookmark_service::BookmarkService},
-    router::ContextRouter,
-};
-use rspc::{Router, RouterBuilder};
-use uuid::Uuid;
+use rspc::*;
 
-pub fn create_bookmark_router() -> RouterBuilder<ContextRouter> {
-    Router::<ContextRouter>::new()
-        .query("list", |t| {
-            t(|ctx, _input: ()| {
-                let service = ctx.bookmark_service.clone();
-                async move {
-                    service
-                        .list_bookmark()
-                        .await
-                        .map_err(|e| rspc::Error::new(rspc::ErrorCode::InternalServerError, e))
-                }
-            })
-        })
-        .query("get", |t| {
-            t(|ctx, id: String| async move {
-                let uuid = Uuid::parse_str(&id).map_err(|e| {
-                    rspc::Error::new(rspc::ErrorCode::BadRequest, format!("Invalid UUID: {}", e))
-                })?;
+// Import DTOs with Specta support
+use crate::domain::repository::bookmark_repository::*;
+use sea_orm::DatabaseConnection;
 
-                ctx.bookmark_service
-                    .get_bookmark_by_id(uuid)
+/// Create bookmark router with type-safe procedures
+pub fn create_bookmark_router() -> Router<DatabaseConnection> {
+    Router::new()
+        .query("getBookmarks", |t| {
+            t.resolver(|ctx, _input: ()| async move {
+                let repo = BookmarkRepositoryImpl::new();
+                repo.find_all(&ctx)
                     .await
-                    .map_err(|e| rspc::Error::new(rspc::ErrorCode::InternalServerError, e))
+                    .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e.to_string()))
             })
         })
-        .mutation("create", |t| {
-            t(|ctx, bookmark: Bookmark| async move {
-                ctx.bookmark_service
-                    .create_bookmark(bookmark)
+        .query("getBookmark", |t| {
+            t.resolver(|ctx, input: i32| async move {
+                let repo = BookmarkRepositoryImpl::new();
+                repo.find_by_id(&ctx, input)
                     .await
-                    .map_err(|e| rspc::Error::new(rspc::ErrorCode::InternalServerError, e))
+                    .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e.to_string()))
             })
         })
-        .mutation("update", |t| {
-            t(|ctx, bookmark: Bookmark| async move {
-                ctx.bookmark_service
-                    .update_bookmark(bookmark)
+        .mutation("createBookmark", |t| {
+            t.resolver(|ctx, input: CreateBookmarkInput| async move {
+                let repo = BookmarkRepositoryImpl::new();
+                repo.create(&ctx, input)
                     .await
-                    .map_err(|e| rspc::Error::new(rspc::ErrorCode::InternalServerError, e))
+                    .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e.to_string()))
             })
         })
-        .mutation("delete", |t| {
-            t(|ctx, id: String| async move {
-                let uuid = Uuid::parse_str(&id).map_err(|e| {
-                    rspc::Error::new(rspc::ErrorCode::BadRequest, format!("Invalid UUID: {}", e))
-                })?;
-
-                ctx.bookmark_service
-                    .delete_bookmark(uuid)
+        .mutation("updateBookmark", |t| {
+            t.resolver(|ctx, input: (i32, UpdateBookmarkInput)| async move {
+                let repo = BookmarkRepositoryImpl::new();
+                repo.update(&ctx, input.0, input.1)
                     .await
-                    .map_err(|e| rspc::Error::new(rspc::ErrorCode::InternalServerError, e))
+                    .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e.to_string()))
+            })
+        })
+        .mutation("deleteBookmark", |t| {
+            t.resolver(|ctx, input: i32| async move {
+                let repo = BookmarkRepositoryImpl::new();
+                repo.delete(&ctx, input)
+                    .await
+                    .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e.to_string()))
             })
         })
 }

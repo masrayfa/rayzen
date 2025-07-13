@@ -1,17 +1,33 @@
-use crate::domain::entities::organization::Organization;
+use crate::domain::dto::organization::organization_dto::{
+    CreateOrganizationRequest, OrganizationDto, UpdateOrganizationRequest,
+};
 
 use async_trait::async_trait;
+use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
 #[async_trait]
 pub trait OrganizationRepository: Send + Sync {
-    async fn create_organization(&self, organization: Organization)
-        -> Result<Organization, String>;
-    async fn get_organization_by_id(&self, id: Uuid) -> Result<Organization, String>;
-    async fn update_organization(&self, organization: Organization)
-        -> Result<Organization, String>;
-    async fn delete_organization(&self, id: Uuid) -> Result<(), String>;
-    async fn list_organization(&self) -> Result<Vec<Organization>, String>;
+    async fn create_organization(
+        &self,
+        db: &DatabaseConnection,
+        organization: OrganizationDto,
+    ) -> Result<OrganizationDto, String>;
+    async fn get_organization_by_id(
+        &self,
+        db: &DatabaseConnection,
+        id: Uuid,
+    ) -> Result<OrganizationDto, String>;
+    async fn update_organization(
+        &self,
+        db: &DatabaseConnection,
+        organization: OrganizationDto,
+    ) -> Result<OrganizationDto, String>;
+    async fn delete_organization(&self, db: &DatabaseConnection, id: Uuid) -> Result<(), String>;
+    async fn list_organization(
+        &self,
+        db: &DatabaseConnection,
+    ) -> Result<Vec<OrganizationDto>, String>;
 }
 
 pub struct OrganizationRepositoryImpl {}
@@ -26,27 +42,36 @@ impl OrganizationRepositoryImpl {
 impl OrganizationRepository for OrganizationRepositoryImpl {
     async fn create_organization(
         &self,
-        organization: Organization,
-    ) -> Result<Organization, String> {
+        db: &DatabaseConnection,
+        organization: OrganizationDto,
+    ) -> Result<OrganizationDto, String> {
         todo!()
     }
 
-    async fn get_organization_by_id(&self, id: Uuid) -> Result<Organization, String> {
+    async fn get_organization_by_id(
+        &self,
+        db: &DatabaseConnection,
+        id: Uuid,
+    ) -> Result<OrganizationDto, String> {
         todo!()
     }
 
     async fn update_organization(
         &self,
-        organization: Organization,
-    ) -> Result<Organization, String> {
+        db: &DatabaseConnection,
+        organization: OrganizationDto,
+    ) -> Result<OrganizationDto, String> {
         todo!()
     }
 
-    async fn delete_organization(&self, id: Uuid) -> Result<(), String> {
+    async fn delete_organization(&self, db: &DatabaseConnection, id: Uuid) -> Result<(), String> {
         todo!()
     }
 
-    async fn list_organization(&self) -> Result<Vec<Organization>, String> {
+    async fn list_organization(
+        &self,
+        db: &DatabaseConnection,
+    ) -> Result<Vec<OrganizationDto>, String> {
         todo!()
     }
 }

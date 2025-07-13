@@ -1,3 +1,7 @@
+[workspace]
+members = [".", "entity", "migration"]
+resolver = "2"
+
 [package]
 name = "rayzen"
 version = "0.1.0"
@@ -31,7 +35,22 @@ specta = { version = "2.0.0-rc.20", features = [
 ] } # Changed from 1.0.5
 chrono = { version = "0.4.31", features = ["serde"] }
 async-trait = "0.1.88"
+sea-orm = { version = "1.1.13", features = [
+  "runtime-tokio-rustls", # `ASYNC_RUNTIME` feature
+  "sqlx-sqlite",          # `DATABASE_DRIVER` feature
+] }
+entity = { path = "entity" }
 
 [dependencies.uuid]
 version = "1.17.0"
 features = ["v4", "serde"]
+
+[dependencies.sea-orm-migration]
+version = "1.1.13"
+features = [
+  # Enable at least one `ASYNC_RUNTIME` and `DATABASE_DRIVER` feature if you want to run migration via CLI.
+  # View the list of supported features at https://www.sea-ql.org/SeaORM/docs/install-and-config/database-and-async-runtime.
+  # e.g.
+  "runtime-tokio-rustls", # `ASYNC_RUNTIME` feature
+  "sqlx-sqlite",          # `DATABASE_DRIVER` feature
+]

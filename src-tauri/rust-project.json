@@ -1,0 +1,22 @@
+{
+  "sysroot_src": null,
+  "crates": [
+    {
+      "root_module": "src/lib.rs",
+      "edition": "2021",
+      "deps": [],
+      "cfg": [],
+      "env": {},
+      "proc_macro_dylib_path": null
+    },
+    {
+      "root_module": "migration/src/lib.rs",
+      "edition": "2021", 
+      "deps": [],
+      "cfg": [],
+      "env": {},
+      "proc_macro_dylib_path": null
+    }
+  ]
+}
+
