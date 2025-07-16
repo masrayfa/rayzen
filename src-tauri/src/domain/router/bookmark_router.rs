@@ -1,11 +1,11 @@
 use rspc::*;
 
 // Import DTOs with Specta support
-use crate::domain::repository::bookmark_repository::*;
+use crate::domain::{repository::bookmark_repository::*, router::ContextRouter};
 use sea_orm::DatabaseConnection;
 
 /// Create bookmark router with type-safe procedures
-pub fn create_bookmark_router() -> Router<DatabaseConnection> {
+pub fn create_bookmark_router() -> Router<ContextRouter> {
     Router::new()
         .query("getBookmarks", |t| {
             t.resolver(|ctx, _input: ()| async move {

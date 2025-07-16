@@ -1,4 +1,4 @@
-use crate::domain::dto::groups::groups_dto::{CreateGroupsRequest, GroupsDto, UpdateGroupsRequest};
+use crate::domain::dto::groups::groups_dto::{CreateGroupsRequest, UpdateGroupsRequest};
 use entity::groups::{self, ActiveModel as GroupsActiveModel, Entity as Groups};
 
 use async_trait::async_trait;
@@ -11,16 +11,20 @@ pub trait GroupRepository: Send + Sync {
         &self,
         db: &DatabaseConnection,
         input: CreateGroupsRequest,
-    ) -> Result<GroupsDto, DbErr>;
-    async fn get_group_by_id(&self, db: &DatabaseConnection, id: i32) -> Result<GroupsDto, DbErr>;
+    ) -> Result<groups::Model, DbErr>;
+    async fn get_group_by_id(
+        &self,
+        db: &DatabaseConnection,
+        id: i32,
+    ) -> Result<groups::Model, DbErr>;
     async fn update_group(
         &self,
         db: &DatabaseConnection,
         id: i32,
         input: UpdateGroupsRequest,
-    ) -> Result<GroupsDto, DbErr>;
+    ) -> Result<groups::Model, DbErr>;
     async fn delete_group(&self, db: &DatabaseConnection, id: i32) -> Result<(), DbErr>;
-    async fn list_groups(&self, db: &DatabaseConnection) -> Result<Vec<GroupsDto>, DbErr>;
+    async fn list_groups(&self, db: &DatabaseConnection) -> Result<Vec<groups::Model>, DbErr>;
 }
 
 pub struct GroupRepositoryImpl {}
@@ -37,7 +41,7 @@ impl GroupRepository for GroupRepositoryImpl {
         &self,
         db: &DatabaseConnection,
         input: CreateGroupsRequest,
-    ) -> Result<GroupsDto, DbErr> {
+    ) -> Result<groups::Model, DbErr> {
         let groups_active_model: GroupsActiveModel = input.into();
 
         let result = Groups::insert(groups_active_model)
@@ -51,18 +55,20 @@ impl GroupRepository for GroupRepositoryImpl {
             .ok_or(DbErr::RecordNotFound("Group not found".to_string()))?;
 
         // Convert the model to DTO
-        Ok(groups_model.into())
+        Ok(groups_model)
     }
 
-    async fn get_group_by_id(&self, db: &DatabaseConnection, id: i32) -> Result<GroupsDto, DbErr> {
+    async fn get_group_by_id(
+        &self,
+        db: &DatabaseConnection,
+        id: i32,
+    ) -> Result<groups::Model, DbErr> {
         let group: Option<groups::Model> = Groups::find_by_id(id)
             .one(db)
             .await
-            .map_err(|e| DbErr::RecordNotFound(e.to_string()))?;
+            .map_err(|e| DbErr::Custom(e.to_string()))?;
 
-        Ok(group
-            .map(|g| g.into())
-            .ok_or(DbErr::RecordNotFound("Group not found".to_string()))?)
+        group.ok_or(DbErr::RecordNotFound("Group not found".to_string()))
     }
 
     async fn update_group(
@@ -70,7 +76,7 @@ impl GroupRepository for GroupRepositoryImpl {
         db: &DatabaseConnection,
         id: i32,
         input: UpdateGroupsRequest,
-    ) -> Result<GroupsDto, DbErr> {
+    ) -> Result<groups::Model, DbErr> {
         // Fetch the existing group to update
         let existing_group = Groups::find_by_id(id)
             .one(db)
@@ -87,13 +93,11 @@ impl GroupRepository for GroupRepositoryImpl {
 
         let groups_model = Groups::find_by_id(updated_groups.id)
             .one(db)
-            .await
-            .map_err(|e| DbErr::RecordNotFound(e.to_string()))?;
+            .await?
+            .ok_or(DbErr::RecordNotFound("Updated group not found".to_string()))?;
 
         // Convert the model to DTO
-        Ok(groups_model
-            .map(|g| g.into())
-            .ok_or(DbErr::RecordNotFound("Updated group not found".to_string()))?)
+        Ok(groups_model)
     }
 
     async fn delete_group(&self, db: &DatabaseConnection, id: i32) -> Result<(), DbErr> {
@@ -104,17 +108,12 @@ impl GroupRepository for GroupRepositoryImpl {
         Ok(())
     }
 
-    async fn list_groups(&self, db: &DatabaseConnection) -> Result<Vec<GroupsDto>, DbErr> {
+    async fn list_groups(&self, db: &DatabaseConnection) -> Result<Vec<groups::Model>, DbErr> {
         let groups: Vec<groups::Model> = Groups::find()
             .all(db)
             .await
             .map_err(|e| DbErr::Custom(e.to_string()))?;
 
-        let list_of_groups = groups
-            .into_iter()
-            .map(|g| g.into())
-            .collect::<Vec<GroupsDto>>();
-
-        Ok(list_of_groups)
+        Ok(groups)
     }
 }

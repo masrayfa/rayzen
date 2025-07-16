@@ -18,28 +18,29 @@ use std::{
 };
 
 use rspc::{Config, Router};
+use sea_orm::DatabaseConnection;
 use tauri::webview::Cookie;
 
 pub struct ContextRouter {
-    // db: Arc<PrismaClient>,
+    pub db: Arc<DatabaseConnection>,
     pub session_id: Option<String>,
-    // cookie: Cookie,
     pub message: Arc<Mutex<String>>,
-    pub bookmark_service: Arc<dyn BookmarkService>,
-    pub group_service: Arc<dyn GroupService>,
-    pub organization_service: Arc<dyn OrganizationService>,
-    pub workspace_service: Arc<dyn WorkspaceService>,
+    // pub bookmark_service: Arc<dyn BookmarkService>,
+    // pub group_service: Arc<dyn GroupService>,
+    // pub organization_service: Arc<dyn OrganizationService>,
+    // pub workspace_service: Arc<dyn WorkspaceService>,
 }
 
 impl ContextRouter {
-    pub fn new() -> Self {
+    pub fn new(db: Arc<DatabaseConnection>) -> Self {
         Self {
+            db: db.clone(),
             session_id: None,
             message: Arc::new(Mutex::new("Hello World".to_string())),
-            bookmark_service: Arc::new(BookmarkServiceImpl::new()),
-            group_service: Arc::new(GroupsServiceImpl::new()),
-            organization_service: Arc::new(OrganizationSeriviceImpl::new()),
-            workspace_service: Arc::new(WorkspaceServiceImpl::new()),
+            // bookmark_service: Arc::new(BookmarkServiceImpl::new()),
+            // group_service: Arc::new(GroupsServiceImpl::new()),
+            // organization_service: Arc::new(OrganizationSeriviceImpl::new()),
+            // workspace_service: Arc::new(WorkspaceServiceImpl::new()),
         }
     }
 }

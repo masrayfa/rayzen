@@ -1,10 +1,10 @@
-use super::bookmark_dto::{BookmarkDto, CreateBookmarkRequest, UpdateBookmarkRequest};
-use entity::bookmark;
+use super::bookmark_dto::{BookmarkDto, CreateBookmarkDto, UpdateBookmarkDto};
+use entity::bookmark::{ActiveModel as BookmarkActiveModel, Model as BookmarkModel};
 use sea_orm::ActiveValue::Set;
 
 /// Convert SeaORM Bookmark Model to DTO
-impl From<bookmark::Model> for BookmarkDto {
-    fn from(model: bookmark::Model) -> Self {
+impl From<BookmarkModel> for BookmarkDto {
+    fn from(model: BookmarkModel) -> Self {
         BookmarkDto {
             id: model.id,
             name: model.name,
@@ -20,14 +20,14 @@ impl From<bookmark::Model> for BookmarkDto {
 }
 
 /// Convert CreateBookmarkRequest to SeaORM ActiveModel
-impl From<CreateBookmarkRequest> for bookmark::ActiveModel {
-    fn from(request: CreateBookmarkRequest) -> Self {
-        bookmark::ActiveModel {
-            name: Set(request.name),
-            url: Set(request.url),
-            tags: Set(request.tags),
-            is_favorite: Set(request.is_favorite),
-            group_id: Set(request.group_id),
+impl From<CreateBookmarkDto> for BookmarkActiveModel {
+    fn from(dto: CreateBookmarkDto) -> Self {
+        BookmarkActiveModel {
+            name: Set(dto.name),
+            url: Set(dto.url),
+            tags: Set(dto.tags),
+            is_favorite: Set(dto.is_favorite),
+            group_id: Set(dto.group_id),
             created_at: Set(chrono::Utc::now()),
             updated_at: Set(chrono::Utc::now()),
             deleted_at: Set(chrono::Utc::now()),
@@ -37,8 +37,8 @@ impl From<CreateBookmarkRequest> for bookmark::ActiveModel {
 }
 
 /// Convert UpdateBookmarkInput to partial SeaORM ActiveModel
-impl UpdateBookmarkRequest {
-    pub fn apply_to_model(self, mut model: bookmark::ActiveModel) -> bookmark::ActiveModel {
+impl UpdateBookmarkDto {
+    pub fn apply_to_model(self, mut model: BookmarkActiveModel) -> BookmarkActiveModel {
         if let Some(name) = self.name {
             model.name = Set(name);
         }

@@ -17,7 +17,7 @@ pub struct BookmarkDto {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
-pub struct CreateBookmarkRequest {
+pub struct CreateBookmarkDto {
     pub name: String,
     pub url: String,
     pub tags: String,
@@ -26,7 +26,8 @@ pub struct CreateBookmarkRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
-pub struct UpdateBookmarkRequest {
+pub struct UpdateBookmarkDto {
+    pub id: Option<i32>,
     pub name: Option<String>,
     pub url: Option<String>,
     pub tags: Option<String>,
