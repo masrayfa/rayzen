@@ -4,7 +4,7 @@ use entity::bookmark::{
 };
 
 // Import SeaORM entities and DTOs
-use sea_orm::{DatabaseConnection, DbErr, EntityTrait};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait};
 
 #[async_trait]
 pub trait BookmarkRepository: Send + Sync {
@@ -73,12 +73,27 @@ impl BookmarkRepository for BookmarkRepositoryImpl {
         id: i32,
         bookmark: BookmarkActiveModel,
     ) -> Result<bookmark::Model, DbErr> {
-        let updated_bookmark = Bookmark::update(bookmark).exec(db).await?;
+        let found_bookmark = Bookmark::find_by_id(id).one(db).await?;
+
+        let found_bookmark_active_model: BookmarkActiveModel = found_bookmark.unwrap().into();
+
+        let updated_bookmark = BookmarkActiveModel {
+            name: bookmark.name,
+            is_favorite: bookmark.is_favorite,
+            tags: bookmark.tags,
+            url: bookmark.url,
+            ..found_bookmark_active_model
+        };
+
+        let updated_bookmark: BookmarkModel =
+            BookmarkActiveModel::update(updated_bookmark, db).await?;
+
+        println!("Bookmarkupdated: {:?}", updated_bookmark);
         Ok(updated_bookmark)
     }
 
     async fn delete(&self, db: &DatabaseConnection, id: i32) -> Result<(), DbErr> {
-        Bookmark::delete_by_id(id).exec(db).await;
+        let _ = Bookmark::delete_by_id(id).exec(db).await;
         Ok(())
     }
 }
