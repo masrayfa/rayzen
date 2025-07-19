@@ -15,7 +15,7 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(pk_auto(Workspace::Id))
                     .col(string(Workspace::Name))
-                    .col(string(Workspace::OrganizationId))
+                    .col(integer(Workspace::OrganizationId))
                     .foreign_key(
                         ForeignKeyCreateStatement::new()
                             .name("fk_workspace_organization")

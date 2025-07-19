@@ -1,5 +1,3 @@
-use crate::domain::util;
-
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use specta::Type;

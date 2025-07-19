@@ -4,7 +4,7 @@ use entity::bookmark::{
 };
 
 // Import SeaORM entities and DTOs
-use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait};
+use sea_orm::{DatabaseConnection, DbErr, EntityTrait};
 
 #[async_trait]
 pub trait BookmarkRepository: Send + Sync {

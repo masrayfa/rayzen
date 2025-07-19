@@ -7,7 +7,7 @@ pub mod workspace_router;
 use crate::domain::service::{
     bookmark_service::{BookmarkService, BookmarkServiceImpl},
     group_service::{GroupService, GroupsServiceImpl},
-    organization_service::{OrganizationSeriviceImpl, OrganizationService},
+    organization_service::OrganizationService,
     workspace_service::{WorkspaceService, WorkspaceServiceImpl},
 };
 
@@ -25,10 +25,6 @@ pub struct ContextRouter {
     pub db: Arc<DatabaseConnection>,
     pub session_id: Option<String>,
     pub message: Arc<Mutex<String>>,
-    // pub bookmark_service: Arc<dyn BookmarkService>,
-    // pub group_service: Arc<dyn GroupService>,
-    // pub organization_service: Arc<dyn OrganizationService>,
-    // pub workspace_service: Arc<dyn WorkspaceService>,
 }
 
 impl ContextRouter {
@@ -37,10 +33,6 @@ impl ContextRouter {
             db: db.clone(),
             session_id: None,
             message: Arc::new(Mutex::new("Hello World".to_string())),
-            // bookmark_service: Arc::new(BookmarkServiceImpl::new()),
-            // group_service: Arc::new(GroupsServiceImpl::new()),
-            // organization_service: Arc::new(OrganizationSeriviceImpl::new()),
-            // workspace_service: Arc::new(WorkspaceServiceImpl::new()),
         }
     }
 }

@@ -1,5 +1,3 @@
-use crate::domain::dto;
-
 use super::bookmark_dto::{BookmarkDto, CreateBookmarkDto, UpdateBookmarkDto};
 use entity::bookmark::{ActiveModel as BookmarkActiveModel, Model as BookmarkModel};
 use sea_orm::ActiveValue::Set;

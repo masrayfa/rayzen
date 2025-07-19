@@ -1,7 +1,4 @@
 // Organization Repository Implementation
-use crate::domain::dto::organization::organization_dto::{
-    CreateOrganizationDto, OrganizationDto, UpdateOrganizationDto,
-};
 use async_trait::async_trait;
 use entity::organization::{self, ActiveModel as OrganizationActiveModel, Entity as Organization};
 use sea_orm::{DatabaseConnection, DbErr, EntityTrait};
