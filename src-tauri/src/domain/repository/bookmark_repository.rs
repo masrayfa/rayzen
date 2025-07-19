@@ -85,8 +85,10 @@ impl BookmarkRepository for BookmarkRepositoryImpl {
             ..found_bookmark_active_model
         };
 
-        let updated_bookmark: BookmarkModel =
-            BookmarkActiveModel::update(updated_bookmark, db).await?;
+        // 2nd Version
+        // let updated_bookmark: BookmarkModel =
+        //     BookmarkActiveModel::update(updated_bookmark, db).await?;
+        let updated_bookmark: BookmarkModel = Bookmark::update(updated_bookmark).exec(db).await?;
 
         println!("Bookmarkupdated: {:?}", updated_bookmark);
         Ok(updated_bookmark)

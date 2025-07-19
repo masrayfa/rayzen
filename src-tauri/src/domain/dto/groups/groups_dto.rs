@@ -13,13 +13,14 @@ pub struct GroupsDto {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
-pub struct CreateGroupsRequest {
+pub struct CreateGroupsDto {
     pub name: String,
     pub workspace_id: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
-pub struct UpdateGroupsRequest {
+pub struct UpdateGroupsDto {
+    pub id: Option<i32>,
     pub name: Option<String>,
     pub workspace_id: Option<i32>,
 }

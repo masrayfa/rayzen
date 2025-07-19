@@ -1,33 +1,34 @@
+// Organization Repository Implementation
 use crate::domain::dto::organization::organization_dto::{
-    CreateOrganizationRequest, OrganizationDto, UpdateOrganizationRequest,
+    CreateOrganizationDto, OrganizationDto, UpdateOrganizationDto,
 };
-
 use async_trait::async_trait;
-use sea_orm::DatabaseConnection;
-use uuid::Uuid;
+use entity::organization::{self, ActiveModel as OrganizationActiveModel, Entity as Organization};
+use sea_orm::{DatabaseConnection, DbErr, EntityTrait};
 
 #[async_trait]
 pub trait OrganizationRepository: Send + Sync {
     async fn create_organization(
         &self,
         db: &DatabaseConnection,
-        organization: OrganizationDto,
-    ) -> Result<OrganizationDto, String>;
+        input: OrganizationActiveModel,
+    ) -> Result<organization::Model, DbErr>;
     async fn get_organization_by_id(
         &self,
         db: &DatabaseConnection,
-        id: Uuid,
-    ) -> Result<OrganizationDto, String>;
+        id: i32,
+    ) -> Result<organization::Model, DbErr>;
     async fn update_organization(
         &self,
         db: &DatabaseConnection,
-        organization: OrganizationDto,
-    ) -> Result<OrganizationDto, String>;
-    async fn delete_organization(&self, db: &DatabaseConnection, id: Uuid) -> Result<(), String>;
-    async fn list_organization(
+        id: i32,
+        input: OrganizationActiveModel,
+    ) -> Result<organization::Model, DbErr>;
+    async fn delete_organization(&self, db: &DatabaseConnection, id: i32) -> Result<(), DbErr>;
+    async fn list_organizations(
         &self,
         db: &DatabaseConnection,
-    ) -> Result<Vec<OrganizationDto>, String>;
+    ) -> Result<Vec<organization::Model>, DbErr>;
 }
 
 pub struct OrganizationRepositoryImpl {}
@@ -43,35 +44,73 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
     async fn create_organization(
         &self,
         db: &DatabaseConnection,
-        organization: OrganizationDto,
-    ) -> Result<OrganizationDto, String> {
-        todo!()
+        input: OrganizationActiveModel,
+    ) -> Result<organization::Model, DbErr> {
+        let organization_active_model: OrganizationActiveModel = input.into();
+        let result = Organization::insert(organization_active_model)
+            .exec(db)
+            .await
+            .map_err(|e| DbErr::Custom(e.to_string()))?;
+        let organization_model = Organization::find_by_id(result.last_insert_id)
+            .one(db)
+            .await?
+            .ok_or(DbErr::RecordNotFound("Organization not found".to_string()))?;
+        Ok(organization_model)
     }
 
     async fn get_organization_by_id(
         &self,
         db: &DatabaseConnection,
-        id: Uuid,
-    ) -> Result<OrganizationDto, String> {
-        todo!()
+        id: i32,
+    ) -> Result<organization::Model, DbErr> {
+        let organization: Option<organization::Model> = Organization::find_by_id(id)
+            .one(db)
+            .await
+            .map_err(|e| DbErr::Custom(e.to_string()))?;
+        organization.ok_or(DbErr::RecordNotFound("Organization not found".to_string()))
     }
 
     async fn update_organization(
         &self,
         db: &DatabaseConnection,
-        organization: OrganizationDto,
-    ) -> Result<OrganizationDto, String> {
-        todo!()
+        id: i32,
+        input: OrganizationActiveModel,
+    ) -> Result<organization::Model, DbErr> {
+        // Fetch the existing organization to update
+        let existing_organization = Organization::find_by_id(id)
+            .one(db)
+            .await?
+            .ok_or(DbErr::RecordNotFound("Organization not found".to_string()))?;
+        let organization_active_model: OrganizationActiveModel = existing_organization.into();
+        let updated_organization = Organization::update(organization_active_model)
+            .exec(db)
+            .await
+            .map_err(|e| DbErr::Custom(e.to_string()))?;
+        let organization_model = Organization::find_by_id(updated_organization.id)
+            .one(db)
+            .await?
+            .ok_or(DbErr::RecordNotFound(
+                "Updated organization not found".to_string(),
+            ))?;
+        Ok(organization_model)
     }
 
-    async fn delete_organization(&self, db: &DatabaseConnection, id: Uuid) -> Result<(), String> {
-        todo!()
+    async fn delete_organization(&self, db: &DatabaseConnection, id: i32) -> Result<(), DbErr> {
+        Organization::delete_by_id(id)
+            .exec(db)
+            .await
+            .map_err(|e| e.to_string());
+        Ok(())
     }
 
-    async fn list_organization(
+    async fn list_organizations(
         &self,
         db: &DatabaseConnection,
-    ) -> Result<Vec<OrganizationDto>, String> {
-        todo!()
+    ) -> Result<Vec<organization::Model>, DbErr> {
+        let organizations: Vec<organization::Model> = Organization::find()
+            .all(db)
+            .await
+            .map_err(|e| DbErr::Custom(e.to_string()))?;
+        Ok(organizations)
     }
 }

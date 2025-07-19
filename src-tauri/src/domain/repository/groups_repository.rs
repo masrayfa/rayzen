@@ -1,4 +1,4 @@
-use crate::domain::dto::groups::groups_dto::{CreateGroupsRequest, UpdateGroupsRequest};
+use crate::domain::dto::groups::groups_dto::{CreateGroupsDto, UpdateGroupsDto};
 use entity::groups::{self, ActiveModel as GroupsActiveModel, Entity as Groups};
 
 use async_trait::async_trait;
@@ -10,7 +10,7 @@ pub trait GroupRepository: Send + Sync {
     async fn create_group(
         &self,
         db: &DatabaseConnection,
-        input: CreateGroupsRequest,
+        input: GroupsActiveModel,
     ) -> Result<groups::Model, DbErr>;
     async fn get_group_by_id(
         &self,
@@ -21,7 +21,7 @@ pub trait GroupRepository: Send + Sync {
         &self,
         db: &DatabaseConnection,
         id: i32,
-        input: UpdateGroupsRequest,
+        input: GroupsActiveModel,
     ) -> Result<groups::Model, DbErr>;
     async fn delete_group(&self, db: &DatabaseConnection, id: i32) -> Result<(), DbErr>;
     async fn list_groups(&self, db: &DatabaseConnection) -> Result<Vec<groups::Model>, DbErr>;
@@ -40,7 +40,7 @@ impl GroupRepository for GroupRepositoryImpl {
     async fn create_group(
         &self,
         db: &DatabaseConnection,
-        input: CreateGroupsRequest,
+        input: GroupsActiveModel,
     ) -> Result<groups::Model, DbErr> {
         let groups_active_model: GroupsActiveModel = input.into();
 
@@ -75,7 +75,7 @@ impl GroupRepository for GroupRepositoryImpl {
         &self,
         db: &DatabaseConnection,
         id: i32,
-        input: UpdateGroupsRequest,
+        input: GroupsActiveModel,
     ) -> Result<groups::Model, DbErr> {
         // Fetch the existing group to update
         let existing_group = Groups::find_by_id(id)
@@ -84,9 +84,8 @@ impl GroupRepository for GroupRepositoryImpl {
             .ok_or(DbErr::RecordNotFound("Group not found".to_string()))?;
 
         let groups_active_model: GroupsActiveModel = existing_group.into();
-        let updated_model = input.apply_to_model(groups_active_model);
 
-        let updated_groups = Groups::update(updated_model)
+        let updated_groups = Groups::update(groups_active_model)
             .exec(db)
             .await
             .map_err(|e| DbErr::Custom(e.to_string()))?;

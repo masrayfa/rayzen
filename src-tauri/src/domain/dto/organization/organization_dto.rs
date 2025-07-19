@@ -8,20 +8,21 @@ use specta::Type;
 pub struct OrganizationDto {
     pub id: i32,
     pub name: String,
-    pub workspace_id: i32,
+    pub user_id: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub deleted_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
-pub struct CreateOrganizationRequest {
+pub struct CreateOrganizationDto {
     pub name: String,
-    pub workspace_id: i32,
+    pub user_id: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
-pub struct UpdateOrganizationRequest {
+pub struct UpdateOrganizationDto {
+    pub id: Option<i32>,
     pub name: Option<String>,
-    pub workspace_id: Option<i32>,
+    pub user_id: Option<i32>,
 }

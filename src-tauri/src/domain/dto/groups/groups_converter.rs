@@ -1,4 +1,4 @@
-use super::groups_dto::{CreateGroupsRequest, GroupsDto, UpdateGroupsRequest};
+use super::groups_dto::{CreateGroupsDto, GroupsDto, UpdateGroupsDto};
 use entity::groups;
 use sea_orm::ActiveValue::Set;
 
@@ -17,8 +17,8 @@ impl From<groups::Model> for GroupsDto {
 }
 
 /// Convert CreateBookmarkRequest to SeaORM ActiveModel
-impl From<CreateGroupsRequest> for groups::ActiveModel {
-    fn from(request: CreateGroupsRequest) -> Self {
+impl From<CreateGroupsDto> for groups::ActiveModel {
+    fn from(request: CreateGroupsDto) -> Self {
         groups::ActiveModel {
             name: Set(request.name),
             workspace_id: Set(request.workspace_id),
@@ -31,7 +31,7 @@ impl From<CreateGroupsRequest> for groups::ActiveModel {
 }
 
 /// Convert UpdateBookmarkInput to partial SeaORM ActiveModel
-impl UpdateGroupsRequest {
+impl UpdateGroupsDto {
     pub fn apply_to_model(self, mut model: groups::ActiveModel) -> groups::ActiveModel {
         if let Some(name) = self.name {
             model.name = Set(name);
