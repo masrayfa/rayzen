@@ -43,8 +43,7 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
         db: &DatabaseConnection,
         input: OrganizationActiveModel,
     ) -> Result<organization::Model, DbErr> {
-        let organization_active_model: OrganizationActiveModel = input.into();
-        let result = Organization::insert(organization_active_model)
+        let result = Organization::insert(input)
             .exec(db)
             .await
             .map_err(|e| DbErr::Custom(e.to_string()))?;
