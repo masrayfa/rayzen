@@ -7,6 +7,7 @@ use crate::domain::{
 };
 
 use async_trait::async_trait;
+use entity::workspace;
 
 #[async_trait]
 pub trait WorkspaceService: Send + Sync {
@@ -48,7 +49,13 @@ impl WorkspaceService for WorkspaceServiceImpl {
         ctx: ContextRouter,
         dto: CreateWorkspaceDto,
     ) -> Result<WorkspaceDto, String> {
-        self.workspace_repository.create_organization(db, workspace)
+        let workspace = self
+            .workspace_repository
+            .create_workspace(&ctx.db, dto.into())
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(workspace.into())
     }
 
     async fn get_workspace_by_id(
@@ -56,22 +63,58 @@ impl WorkspaceService for WorkspaceServiceImpl {
         ctx: ContextRouter,
         id: i32,
     ) -> Result<WorkspaceDto, String> {
-        todo!()
+        let workspace = self
+            .workspace_repository
+            .get_workspace_by_id(&ctx.db, id)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(workspace.into())
     }
 
     async fn update_workspace(
         &self,
         ctx: ContextRouter,
-        workspace: UpdateWorkspaceDto,
+        dto: UpdateWorkspaceDto,
     ) -> Result<WorkspaceDto, String> {
-        todo!()
+        if dto.id.is_none() {
+            return Err("Organization ID is required for update".to_string());
+        }
+
+        let id = dto.id.unwrap();
+
+        let existing_workspace = self
+            .workspace_repository
+            .get_workspace_by_id(&ctx.db, id)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let updated_workspace = self
+            .workspace_repository
+            .update_workspace(&ctx.db, id, existing_workspace.into())
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(updated_workspace.into())
     }
 
     async fn delete_workspace(&self, ctx: ContextRouter, id: i32) -> Result<(), String> {
-        todo!()
+        let _deleted_workspace = self
+            .workspace_repository
+            .delete_workspace(&ctx.db, id)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(())
     }
 
     async fn list_workspace(&self, ctx: ContextRouter) -> Result<Vec<WorkspaceDto>, String> {
-        todo!()
+        let workspaces = self
+            .workspace_repository
+            .list_workspace(&ctx.db)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(workspaces.into_iter().map(Into::into).collect())
     }
 }
