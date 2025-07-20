@@ -22,6 +22,16 @@ pub fn create_workspace_router() -> RouterBuilder<ContextRouter> {
                     .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e))
             })
         })
+        .query("getWorkspaceById", |t| {
+            t.resolver(|ctx: ContextRouter, input: i32| async move {
+                let repo = Arc::new(WorkspaceRepositoryImpl::new());
+                let service = WorkspaceServiceImpl::new(repo);
+                service
+                    .get_workspace_by_id(ctx, input)
+                    .await
+                    .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e))
+            })
+        })
         .mutation("createWorkspace", |t| {
             t.resolver(|ctx: ContextRouter, input: CreateWorkspaceDto| async move {
                 let repo = Arc::new(WorkspaceRepositoryImpl::new());

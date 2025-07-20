@@ -22,6 +22,16 @@ pub fn create_users_router() -> RouterBuilder<ContextRouter> {
                     .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e))
             })
         })
+        .query("getUserById", |t| {
+            t.resolver(|ctx: ContextRouter, input: i32| async move {
+                let repo = Arc::new(UserRepositoryImpl::new());
+                let service = UserServiceImpl::new(repo);
+                service
+                    .get_user_by_id(ctx, input)
+                    .await
+                    .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e))
+            })
+        })
         .mutation("createUser", |t| {
             t.resolver(|ctx: ContextRouter, input: CreateUserDto| async move {
                 let repo = Arc::new(UserRepositoryImpl::new());
