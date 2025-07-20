@@ -12,9 +12,9 @@ function App() {
 
   async function greet() {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    const userId = await api.query(['users.get', 27]);
+    const users = await api.query(['users.getUsers']);
     // setGreetMsg(await invoke<RustCommand>('greet', { name: name() }));
-    setGreetMsg(userId.toString());
+    setGreetMsg(users[0].name);
   }
 
   return (

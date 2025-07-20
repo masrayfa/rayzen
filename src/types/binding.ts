@@ -3,9 +3,65 @@
 
 export type Procedures = {
     queries: 
-        { key: "users.get", input: number, result: string } | 
-        { key: "users.list", input: never, result: null[] } | 
-        { key: "version", input: never, result: string },
-    mutations: never,
+        { key: "bookmark.getBookmarkById", input: number, result: BookmarkDto } | 
+        { key: "bookmark.getBookmarks", input: never, result: BookmarkDto[] } | 
+        { key: "groups.getGroupById", input: number, result: GroupsDto } | 
+        { key: "groups.getGroups", input: never, result: GroupsDto[] } | 
+        { key: "organization.getOrganizationById", input: number, result: OrganizationDto } | 
+        { key: "organization.getOrganizations", input: never, result: OrganizationDto[] } | 
+        { key: "users.getUserById", input: number, result: UserDto } | 
+        { key: "users.getUsers", input: never, result: UserDto[] } | 
+        { key: "version", input: never, result: string } | 
+        { key: "workspace.getWorkspaceById", input: number, result: WorkspaceDto } | 
+        { key: "workspace.getWorkspaces", input: never, result: WorkspaceDto[] },
+    mutations: 
+        { key: "bookmark.createBookmark", input: CreateBookmarkDto, result: BookmarkDto } | 
+        { key: "bookmark.deleteBookmark", input: number, result: null } | 
+        { key: "bookmark.updateBookmark", input: UpdateBookmarkDto, result: BookmarkDto } | 
+        { key: "groups.createGroups", input: CreateGroupsDto, result: GroupsDto } | 
+        { key: "groups.deleteBookmark", input: number, result: null } | 
+        { key: "groups.updateBookmark", input: UpdateGroupsDto, result: GroupsDto } | 
+        { key: "organization.createOrganization", input: CreateOrganizationDto, result: OrganizationDto } | 
+        { key: "organization.deleteOrganization", input: number, result: null } | 
+        { key: "organization.updateOrganization", input: UpdateOrganizationDto, result: OrganizationDto } | 
+        { key: "users.createUser", input: CreateUserDto, result: UserDto } | 
+        { key: "users.deleteUser", input: number, result: null } | 
+        { key: "users.updateUser", input: UpdateUserDto, result: UserDto } | 
+        { key: "workspace.createWorkspace", input: CreateWorkspaceDto, result: WorkspaceDto } | 
+        { key: "workspace.deleteWorkspace", input: number, result: null } | 
+        { key: "workspace.updateWorkspace", input: UpdateWorkspaceDto, result: WorkspaceDto },
     subscriptions: never
 };
+
+/**
+ * Bookmark DTO for frontend communication
+ */
+export type BookmarkDto = { id: number; name: string; url: string; tags: string; is_favorite: boolean; group_id: number; created_at: string; updated_at: string; deleted_at: string | null }
+
+export type CreateBookmarkDto = { name: string; url: string; tags: string; is_favorite: boolean; group_id: number }
+
+export type CreateGroupsDto = { name: string; workspace_id: number }
+
+export type CreateOrganizationDto = { name: string; user_id: number }
+
+export type CreateUserDto = { name: string; email: string }
+
+export type CreateWorkspaceDto = { name: string; organization_id: number }
+
+export type GroupsDto = { id: number; name: string; workspace_id: number; created_at: string; updated_at: string; deleted_at: string | null }
+
+export type OrganizationDto = { id: number; name: string; user_id: number; created_at: string; updated_at: string; deleted_at: string | null }
+
+export type UpdateBookmarkDto = { id: number | null; name: string | null; url: string | null; tags: string | null; is_favorite: boolean | null; group_id: number | null }
+
+export type UpdateGroupsDto = { id: number | null; name: string | null; workspace_id: number | null }
+
+export type UpdateOrganizationDto = { id: number | null; name: string | null; user_id: number | null }
+
+export type UpdateUserDto = { id: number | null; name: string | null; email: string | null }
+
+export type UpdateWorkspaceDto = { id: number | null; name: string | null; organization_id: number | null }
+
+export type UserDto = { id: number; name: string; email: string; created_at: string; updated_at: string; deleted_at: string | null }
+
+export type WorkspaceDto = { id: number; name: string; organization_id: number; created_at: string; updated_at: string; deleted_at: string | null }

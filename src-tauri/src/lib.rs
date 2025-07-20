@@ -2,6 +2,7 @@ mod db;
 mod domain;
 
 use domain::router;
+use dotenvy;
 use std::sync::{Arc, Mutex};
 
 use rspc_tauri;
@@ -9,6 +10,8 @@ use rspc_tauri;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 #[tokio::main]
 pub async fn run() {
+    dotenvy::dotenv().ok();
+
     // Initialize the database connection
     let database_uri =
         std::env::var("DATABASE_URL").expect("DATABASE_URL must be set in the environment");
