@@ -26,7 +26,6 @@ impl From<CreateWorkspaceDto> for ActiveModel {
             organization_id: Set(dto.organization_id),
             created_at: Set(chrono::Utc::now()),
             updated_at: Set(chrono::Utc::now()),
-            deleted_at: Set(chrono::Utc::now()),
             ..Default::default()
         }
     }

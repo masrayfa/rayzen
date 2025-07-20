@@ -30,7 +30,6 @@ impl From<CreateBookmarkDto> for BookmarkActiveModel {
             group_id: Set(dto.group_id),
             created_at: Set(chrono::Utc::now()),
             updated_at: Set(chrono::Utc::now()),
-            deleted_at: Set(chrono::Utc::now()),
             ..Default::default()
         }
     }

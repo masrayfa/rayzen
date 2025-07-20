@@ -26,7 +26,6 @@ impl From<CreateOrganizationDto> for organization::ActiveModel {
             user_id: Set(dto.user_id),
             created_at: Set(chrono::Utc::now()),
             updated_at: Set(chrono::Utc::now()),
-            deleted_at: Set(chrono::Utc::now()),
             ..Default::default()
         }
     }

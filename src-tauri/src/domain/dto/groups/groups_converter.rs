@@ -24,7 +24,6 @@ impl From<CreateGroupsDto> for groups::ActiveModel {
             workspace_id: Set(request.workspace_id),
             created_at: Set(chrono::Utc::now()),
             updated_at: Set(chrono::Utc::now()),
-            deleted_at: Set(chrono::Utc::now()),
             ..Default::default()
         }
     }
