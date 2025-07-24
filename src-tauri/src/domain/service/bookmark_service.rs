@@ -28,6 +28,11 @@ pub trait BookmarkService: Send + Sync {
         dto: CreateBookmarkDto,
     ) -> Result<BookmarkDto, String>;
     async fn get_bookmark_by_id(&self, ctx: ContextRouter, id: i32) -> Result<BookmarkDto, String>;
+    async fn search_bookmarks(
+        &self,
+        ctx: ContextRouter,
+        query: &str,
+    ) -> Result<Vec<BookmarkDto>, String>;
     async fn update_bookmark(
         &self,
         ctx: ContextRouter,
@@ -62,6 +67,20 @@ impl BookmarkService for BookmarkServiceImpl {
             .ok_or_else(|| "Bookmark not found".to_string())?;
 
         Ok(bookmark.into())
+    }
+
+    async fn search_bookmarks(
+        &self,
+        ctx: ContextRouter,
+        query: &str,
+    ) -> Result<Vec<BookmarkDto>, String> {
+        let bookmarks = self
+            .bookmark_repository
+            .search(&ctx.db, query)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(bookmarks.into_iter().map(Into::into).collect())
     }
 
     async fn update_bookmark(

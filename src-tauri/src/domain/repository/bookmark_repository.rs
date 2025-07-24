@@ -4,7 +4,7 @@ use entity::bookmark::{
 };
 
 // Import SeaORM entities and DTOs
-use sea_orm::{DatabaseConnection, DbErr, EntityTrait};
+use sea_orm::{prelude::Expr, Condition, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 
 #[async_trait]
 pub trait BookmarkRepository: Send + Sync {
@@ -18,6 +18,11 @@ pub trait BookmarkRepository: Send + Sync {
         db: &DatabaseConnection,
         id: i32,
     ) -> Result<Option<BookmarkModel>, DbErr>;
+    async fn search(
+        &self,
+        db: &DatabaseConnection,
+        query: &str,
+    ) -> Result<Vec<bookmark::Model>, DbErr>;
     async fn find_all(&self, db: &DatabaseConnection) -> Result<Vec<BookmarkModel>, DbErr>;
     async fn update(
         &self,
@@ -55,6 +60,28 @@ impl BookmarkRepository for BookmarkRepositoryImpl {
     ) -> Result<Option<BookmarkModel>, DbErr> {
         let bookmark: Option<BookmarkModel> = Bookmark::find_by_id(id).one(db).await?;
         Ok(bookmark)
+    }
+
+    async fn search(
+        &self,
+        db: &DatabaseConnection,
+        query: &str,
+    ) -> Result<Vec<bookmark::Model>, DbErr> {
+        let keywords: Vec<&str> = query.split_whitespace().collect();
+
+        let mut condition = Condition::any();
+
+        for keyword in keywords {
+            let pattern = format!("%{}%", keyword);
+
+            let keyword_condition = Condition::any()
+                .add(Expr::col(bookmark::Column::Name).like(&pattern))
+                .add(Expr::col(bookmark::Column::Tags).like(&pattern));
+
+            condition = condition.add(keyword_condition);
+        }
+
+        bookmark::Entity::find().filter(condition).all(db).await
     }
 
     async fn find_all(&self, db: &DatabaseConnection) -> Result<Vec<BookmarkModel>, DbErr> {

@@ -36,6 +36,17 @@ pub fn create_bookmark_router() -> RouterBuilder<ContextRouter> {
                     .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e))
             })
         })
+        .query("searchBookmark", |t| {
+            t.resolver(|ctx: ContextRouter, input: String| async move {
+                let repo = Arc::new(BookmarkRepositoryImpl::new());
+                let service = BookmarkServiceImpl::new(repo);
+
+                service
+                    .search_bookmarks(ctx, &input)
+                    .await
+                    .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e))
+            })
+        })
         .mutation("createBookmark", |t| {
             t.resolver(|ctx: ContextRouter, input: CreateBookmarkDto| async move {
                 let repo = Arc::new(BookmarkRepositoryImpl::new());
