@@ -5,6 +5,7 @@ export type Procedures = {
     queries: 
         { key: "bookmark.getBookmarkById", input: number, result: BookmarkDto } | 
         { key: "bookmark.getBookmarks", input: never, result: BookmarkDto[] } | 
+        { key: "bookmark.searchBookmark", input: string, result: BookmarkDto[] } | 
         { key: "groups.getGroupById", input: number, result: GroupsDto } | 
         { key: "groups.getGroups", input: never, result: GroupsDto[] } | 
         { key: "organization.getOrganizationById", input: number, result: OrganizationDto } | 

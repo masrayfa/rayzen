@@ -1,56 +1,60 @@
-import { createSignal } from 'solid-js';
-import logo from './assets/logo.svg';
-import { invoke } from '@tauri-apps/api/core';
-import './App.css';
+import { Component, createSignal } from 'solid-js';
+import SearchInput from './components/SearchInput';
+// import SearchResults from './components/SearchResults';
+import { SearchResult } from './types';
 import { api } from './rpc';
+import SearchResults from './components/SearcResult';
 
-type RustCommand = 'greet' | 'hej';
+const App: Component = () => {
+  const [results, setResults] = createSignal<SearchResult[]>([]);
 
-function App() {
-  const [greetMsg, setGreetMsg] = createSignal('');
-  const [name, setName] = createSignal('');
+  const handleSearch = async (query: string) => {
+    const foundBookmarks = await api.query(['bookmark.searchBookmark', query]);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    const users = await api.query(['users.getUsers']);
-    // setGreetMsg(await invoke<RustCommand>('greet', { name: name() }));
-    setGreetMsg(users[0].name);
-  }
+    let searchResults: SearchResult[] = [
+      {
+        id: 0,
+        title: '',
+        type: 'bookmark',
+        is_favorite: false,
+        tags: '',
+        url: '',
+      },
+    ];
+
+    foundBookmarks.map((bookmark) => {
+      searchResults.push({
+        id: bookmark.id,
+        title: bookmark.name,
+        tags: bookmark.tags,
+        is_favorite: bookmark.is_favorite,
+        url: bookmark.url,
+        type: 'bookmark',
+      });
+    });
+
+    setResults(searchResults);
+  };
 
   return (
-    <main class="container">
-      <h1>Welcome to Tauri + Solid</h1>
+    <div class="min-h-screen bg-gray-900 text-white">
+      <div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-8">
+          <h1 class="text-3xl font-bold mb-2">Raycast Clone</h1>
+          <p class="text-gray-400">
+            Search your bookmarks, groups, and workspaces
+          </p>
+        </div>
 
-      <div class="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" class="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" class="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://solidjs.com" target="_blank">
-          <img src={logo} class="logo solid" alt="Solid logo" />
-        </a>
+        <SearchInput onSearch={handleSearch} />
+        <SearchResults results={results()} />
+
+        <div class="fixed bottom-4 right-4 text-xs text-gray-500">
+          <div>↑↓ Navigate • Enter Open • Esc Clear</div>
+        </div>
       </div>
-      <p>Click on the Tauri, Vite, and Solid logos to learn more.</p>
-
-      <form
-        class="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg()}</p>
-    </main>
+    </div>
   );
-}
+};
 
 export default App;
