@@ -53,7 +53,7 @@ const SearchInput: Component<SearchInputProps> = (props) => {
         placeholder={
           props.placeholder || 'Search bookmarks, groups, workspaces...'
         }
-        class="w-full pl-12 pr-4 py-4 text-lg bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        class="w-full pl-12 pr-4 py-4 text-lg border border-white/50 rounded-xl text-white placeholder-gray-400"
       />
     </div>
   );

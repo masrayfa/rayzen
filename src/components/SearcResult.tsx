@@ -90,14 +90,12 @@ const SearchResults: Component<SearchResultsProps> = (props) => {
   return (
     <div class="w-full max-w-2xl mx-auto mt-4">
       {props.results.length > 0 && (
-        <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
+        <div class="border border-gray-700 rounded-xl overflow-hidden">
           <For each={props.results}>
             {(result, index) => (
               <div
                 class={`px-4 py-3 border-b border-gray-700 last:border-b-0 cursor-pointer transition-colors ${
-                  index() === selectedIndex()
-                    ? 'bg-blue-600 bg-opacity-20'
-                    : 'hover:bg-gray-700'
+                  index() === selectedIndex() ? 'bg-black' : 'hover:bg-white/40'
                 }`}
                 onClick={() => {
                   if (result.url) {
