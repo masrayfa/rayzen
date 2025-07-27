@@ -11,7 +11,6 @@ impl From<user::Model> for UserDto {
             email: model.email,
             created_at: model.created_at,
             updated_at: model.updated_at,
-            deleted_at: Some(model.deleted_at),
         }
     }
 }

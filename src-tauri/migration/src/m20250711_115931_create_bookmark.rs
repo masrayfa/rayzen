@@ -29,7 +29,6 @@ impl MigrationTrait for Migration {
                     )
                     .col(timestamp(Bookmark::CreatedAt))
                     .col(timestamp(Bookmark::UpdatedAt))
-                    .col(timestamp(Bookmark::DeletedAt).null())
                     .to_owned(),
             )
             .await
@@ -53,5 +52,4 @@ enum Bookmark {
     GroupId,
     CreatedAt,
     UpdatedAt,
-    DeletedAt,
 }

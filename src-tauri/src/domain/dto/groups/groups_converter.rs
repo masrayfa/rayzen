@@ -11,7 +11,6 @@ impl From<groups::Model> for GroupsDto {
             workspace_id: model.workspace_id,
             created_at: model.created_at,
             updated_at: model.updated_at,
-            deleted_at: Some(model.deleted_at),
         }
     }
 }

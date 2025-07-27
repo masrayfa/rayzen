@@ -13,7 +13,6 @@ impl From<organization::Model> for OrganizationDto {
             user_id: model.user_id,
             created_at: model.created_at,
             updated_at: model.updated_at,
-            deleted_at: Some(model.deleted_at),
         }
     }
 }
@@ -44,17 +43,3 @@ impl UpdateOrganizationDto {
         model
     }
 }
-
-// /// Convert Organization Model to ActiveModel (for updates)
-// impl From<organization::Model> for organization::ActiveModel {
-//     fn from(model: organization::Model) -> Self {
-//         organization::ActiveModel {
-//             id: Set(model.id),
-//             name: Set(model.name),
-//             user_id: Set(model.user_id),
-//             created_at: Set(model.created_at),
-//             updated_at: Set(model.updated_at),
-//             deleted_at: Set(model.deleted_at),
-//         }
-//     }
-// }

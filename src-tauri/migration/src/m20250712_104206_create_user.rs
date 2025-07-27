@@ -16,7 +16,6 @@ impl MigrationTrait for Migration {
                     .col(string(User::Email))
                     .col(timestamp(User::CreatedAt))
                     .col(timestamp(User::UpdatedAt))
-                    .col(timestamp(User::DeletedAt).null())
                     .to_owned(),
             )
             .await
@@ -37,5 +36,4 @@ pub enum User {
     Email,
     CreatedAt,
     UpdatedAt,
-    DeletedAt,
 }

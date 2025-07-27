@@ -26,7 +26,6 @@ impl MigrationTrait for Migration {
                     )
                     .col(timestamp(Groups::CreatedAt))
                     .col(timestamp(Groups::UpdatedAt))
-                    .col(timestamp(Groups::DeletedAt).null())
                     .to_owned(),
             )
             .await
@@ -47,5 +46,4 @@ pub enum Groups {
     WorkspaceId,
     CreatedAt,
     UpdatedAt,
-    DeletedAt,
 }

@@ -32,6 +32,16 @@ pub fn create_groups_router() -> RouterBuilder<ContextRouter> {
                     .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e))
             })
         })
+        .query("getBelongedGroups", |t| {
+            t.resolver(|ctx: ContextRouter, workspace_id: i32| async move {
+                let repo = Arc::new(GroupRepositoryImpl::new());
+                let service = GroupsServiceImpl::new(repo);
+                service
+                    .list_belonged_groups(ctx, workspace_id)
+                    .await
+                    .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e))
+            })
+        })
         .mutation("createGroups", |t| {
             t.resolver(|ctx: ContextRouter, input: CreateGroupsDto| async move {
                 let repo = Arc::new(GroupRepositoryImpl::new());
@@ -42,7 +52,7 @@ pub fn create_groups_router() -> RouterBuilder<ContextRouter> {
                     .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e))
             })
         })
-        .mutation("updateBookmark", |t| {
+        .mutation("updateGroup", |t| {
             t.resolver(|ctx: ContextRouter, input: UpdateGroupsDto| async move {
                 let repo = Arc::new(GroupRepositoryImpl::new());
                 let service = GroupsServiceImpl::new(repo);
@@ -52,7 +62,7 @@ pub fn create_groups_router() -> RouterBuilder<ContextRouter> {
                     .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e))
             })
         })
-        .mutation("deleteBookmark", |t| {
+        .mutation("deleteGroup", |t| {
             t.resolver(|ctx: ContextRouter, input: i32| async move {
                 let repo = Arc::new(GroupRepositoryImpl::new());
                 let service = GroupsServiceImpl::new(repo);

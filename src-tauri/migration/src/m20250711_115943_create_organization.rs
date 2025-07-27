@@ -26,7 +26,6 @@ impl MigrationTrait for Migration {
                     )
                     .col(timestamp(Organization::CreatedAt))
                     .col(timestamp(Organization::UpdatedAt))
-                    .col(timestamp(Organization::DeletedAt).null())
                     .to_owned(),
             )
             .await
@@ -47,5 +46,4 @@ pub enum Organization {
     UserId,
     CreatedAt,
     UpdatedAt,
-    DeletedAt,
 }

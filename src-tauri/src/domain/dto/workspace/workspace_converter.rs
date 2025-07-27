@@ -13,7 +13,6 @@ impl From<Model> for WorkspaceDto {
             organization_id: model.organization_id,
             created_at: model.created_at,
             updated_at: model.updated_at,
-            deleted_at: Some(model.deleted_at),
         }
     }
 }

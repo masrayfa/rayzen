@@ -26,7 +26,6 @@ impl MigrationTrait for Migration {
                     )
                     .col(timestamp(Workspace::CreatedAt))
                     .col(timestamp(Workspace::UpdatedAt))
-                    .col(timestamp(Workspace::DeletedAt).null())
                     .to_owned(),
             )
             .await
@@ -34,7 +33,7 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Organization::Table).to_owned())
+            .drop_table(Table::drop().table(Workspace::Table).to_owned())
             .await
     }
 }
@@ -47,5 +46,4 @@ pub enum Workspace {
     OrganizationId,
     CreatedAt,
     UpdatedAt,
-    DeletedAt,
 }

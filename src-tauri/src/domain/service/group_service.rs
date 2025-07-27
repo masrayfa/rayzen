@@ -35,6 +35,11 @@ pub trait GroupService: Send + Sync {
     ) -> Result<GroupsDto, String>;
     async fn delete_group(&self, ctx: ContextRouter, id: i32) -> Result<(), String>;
     async fn list_groups(&self, ctx: ContextRouter) -> Result<Vec<GroupsDto>, String>;
+    async fn list_belonged_groups(
+        &self,
+        ctx: ContextRouter,
+        workspace_id: i32,
+    ) -> Result<Vec<GroupsDto>, String>;
 }
 
 #[async_trait]
@@ -47,6 +52,20 @@ impl GroupService for GroupsServiceImpl {
             .map_err(|e| e.to_string())?;
 
         Ok(list_of_groups.into_iter().map(Into::into).collect())
+    }
+
+    async fn list_belonged_groups(
+        &self,
+        ctx: ContextRouter,
+        workspace_id: i32,
+    ) -> Result<Vec<GroupsDto>, String> {
+        let belonged_groups = self
+            .groups_repository
+            .find_by_workspace_id(&ctx.db, workspace_id)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(belonged_groups.into_iter().map(Into::into).collect())
     }
 
     async fn get_group_by_id(&self, ctx: ContextRouter, id: i32) -> Result<GroupsDto, String> {

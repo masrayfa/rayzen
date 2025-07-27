@@ -1,8 +1,9 @@
+use chrono::NaiveDateTime;
 use entity::groups::{self, ActiveModel as GroupsActiveModel, Entity as Groups};
 
 use async_trait::async_trait;
 
-use sea_orm::{DatabaseConnection, DbErr, EntityTrait};
+use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait, QueryFilter};
 
 #[async_trait]
 pub trait GroupRepository: Send + Sync {
@@ -24,6 +25,11 @@ pub trait GroupRepository: Send + Sync {
     ) -> Result<groups::Model, DbErr>;
     async fn delete_group(&self, db: &DatabaseConnection, id: i32) -> Result<(), DbErr>;
     async fn list_groups(&self, db: &DatabaseConnection) -> Result<Vec<groups::Model>, DbErr>;
+    async fn find_by_workspace_id(
+        &self,
+        db: &DatabaseConnection,
+        workspace_id: i32,
+    ) -> Result<Vec<groups::Model>, DbErr>;
 }
 
 pub struct GroupRepositoryImpl {}
@@ -113,5 +119,41 @@ impl GroupRepository for GroupRepositoryImpl {
             .map_err(|e| DbErr::Custom(e.to_string()))?;
 
         Ok(groups)
+    }
+
+    async fn find_by_workspace_id(
+        &self,
+        db: &DatabaseConnection,
+        workspace_id: i32,
+    ) -> Result<Vec<groups::Model>, DbErr> {
+        println!(
+            "🔍 Searching active groups with workspace_id: {}",
+            workspace_id
+        );
+
+        // Debug: Check all groups in workspace (including deleted)
+        let all_groups_in_workspace = Groups::find()
+            .filter(groups::Column::WorkspaceId.eq(workspace_id))
+            .all(db)
+            .await?;
+
+        println!(
+            "📊 All groups in workspace {}: {}",
+            workspace_id,
+            all_groups_in_workspace.len()
+        );
+
+        let active_groups = Groups::find()
+            .filter(groups::Column::WorkspaceId.eq(workspace_id))
+            .all(db)
+            .await
+            .map_err(|e| {
+                println!("❌ Query error: {}", e);
+                DbErr::Custom(e.to_string())
+            })?;
+
+        println!("✅ Active groups found: {}", active_groups.len());
+
+        Ok(active_groups)
     }
 }
