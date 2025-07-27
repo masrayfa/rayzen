@@ -6,6 +6,7 @@ export type Procedures = {
         { key: "bookmark.getBookmarkById", input: number, result: BookmarkDto } | 
         { key: "bookmark.getBookmarks", input: never, result: BookmarkDto[] } | 
         { key: "bookmark.searchBookmark", input: string, result: BookmarkDto[] } | 
+        { key: "groups.getBelongedGroups", input: number, result: GroupsDto[] } | 
         { key: "groups.getGroupById", input: number, result: GroupsDto } | 
         { key: "groups.getGroups", input: never, result: GroupsDto[] } | 
         { key: "organization.getOrganizationById", input: number, result: OrganizationDto } | 
@@ -20,8 +21,8 @@ export type Procedures = {
         { key: "bookmark.deleteBookmark", input: number, result: null } | 
         { key: "bookmark.updateBookmark", input: UpdateBookmarkDto, result: BookmarkDto } | 
         { key: "groups.createGroups", input: CreateGroupsDto, result: GroupsDto } | 
-        { key: "groups.deleteBookmark", input: number, result: null } | 
-        { key: "groups.updateBookmark", input: UpdateGroupsDto, result: GroupsDto } | 
+        { key: "groups.deleteGroup", input: number, result: null } | 
+        { key: "groups.updateGroup", input: UpdateGroupsDto, result: GroupsDto } | 
         { key: "organization.createOrganization", input: CreateOrganizationDto, result: OrganizationDto } | 
         { key: "organization.deleteOrganization", input: number, result: null } | 
         { key: "organization.updateOrganization", input: UpdateOrganizationDto, result: OrganizationDto } | 
@@ -37,7 +38,7 @@ export type Procedures = {
 /**
  * Bookmark DTO for frontend communication
  */
-export type BookmarkDto = { id: number; name: string; url: string; tags: string; is_favorite: boolean; group_id: number; created_at: string; updated_at: string; deleted_at: string | null }
+export type BookmarkDto = { id: number; name: string; url: string; tags: string; is_favorite: boolean; group_id: number; created_at: string; updated_at: string }
 
 export type CreateBookmarkDto = { name: string; url: string; tags: string; is_favorite: boolean; group_id: number }
 
@@ -49,9 +50,9 @@ export type CreateUserDto = { name: string; email: string }
 
 export type CreateWorkspaceDto = { name: string; organization_id: number }
 
-export type GroupsDto = { id: number; name: string; workspace_id: number; created_at: string; updated_at: string; deleted_at: string | null }
+export type GroupsDto = { id: number; name: string; workspace_id: number; created_at: string; updated_at: string }
 
-export type OrganizationDto = { id: number; name: string; user_id: number; created_at: string; updated_at: string; deleted_at: string | null }
+export type OrganizationDto = { id: number; name: string; user_id: number; created_at: string; updated_at: string }
 
 export type UpdateBookmarkDto = { id: number | null; name: string | null; url: string | null; tags: string | null; is_favorite: boolean | null; group_id: number | null }
 
@@ -63,6 +64,6 @@ export type UpdateUserDto = { id: number | null; name: string | null; email: str
 
 export type UpdateWorkspaceDto = { id: number | null; name: string | null; organization_id: number | null }
 
-export type UserDto = { id: number; name: string; email: string; created_at: string; updated_at: string; deleted_at: string | null }
+export type UserDto = { id: number; name: string; email: string; created_at: string; updated_at: string }
 
-export type WorkspaceDto = { id: number; name: string; organization_id: number; created_at: string; updated_at: string; deleted_at: string | null }
+export type WorkspaceDto = { id: number; name: string; organization_id: number; created_at: string; updated_at: string }

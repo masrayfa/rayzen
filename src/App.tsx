@@ -1,4 +1,4 @@
-import { Component, createSignal } from 'solid-js';
+import { Component, createResource, createSignal } from 'solid-js';
 import { SearchResult } from './types';
 import { api } from './rpc';
 import SearchResults from './components/SearcResult';
@@ -7,6 +7,10 @@ import { SearchInput } from './components/SearchInput';
 const App: Component = () => {
   const [results, setResults] = createSignal<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = createSignal(0);
+
+  const [data] = createResource(() =>
+    api.query(['groups.getBelongedGroups', 1])
+  );
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) {
@@ -79,6 +83,9 @@ const App: Component = () => {
           onSelectionChange={setSelectedIndex}
           onSelectItem={handleSelectItem}
         />
+        <div>
+          <p class="text-white bg-red-800 p-3">{JSON.stringify(data())}</p>
+        </div>
 
         <div class="fixed bottom-4 right-4 text-xs text-gray-500">
           <div>↑↓ Navigate • Enter Open • Esc Clear</div>
