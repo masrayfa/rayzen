@@ -22,9 +22,11 @@
     "noFallthroughCasesInSwitch": true,
 
     // Shadcn
-    "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "~/*": [
+        "./src/*"
+      ]
     }
   },
   "include": ["src"],

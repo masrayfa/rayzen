@@ -3,9 +3,10 @@
 
 export type Procedures = {
     queries: 
-        { key: "bookmark.getBookmarkById", input: number, result: BookmarkDto } | 
-        { key: "bookmark.getBookmarks", input: never, result: BookmarkDto[] } | 
-        { key: "bookmark.searchBookmark", input: string, result: BookmarkDto[] } | 
+        { key: "bookmark.getByGroup", input: number, result: BookmarkDto[] } | 
+        { key: "bookmark.getById", input: number, result: BookmarkDto } | 
+        { key: "bookmark.list", input: never, result: BookmarkDto[] } | 
+        { key: "bookmark.search", input: string, result: BookmarkDto[] } | 
         { key: "groups.getBelongedGroups", input: number, result: GroupsDto[] } | 
         { key: "groups.getGroupById", input: number, result: GroupsDto } | 
         { key: "groups.getGroups", input: never, result: GroupsDto[] } | 
@@ -17,9 +18,9 @@ export type Procedures = {
         { key: "workspace.getWorkspaceById", input: number, result: WorkspaceDto } | 
         { key: "workspace.getWorkspaces", input: never, result: WorkspaceDto[] },
     mutations: 
-        { key: "bookmark.createBookmark", input: CreateBookmarkDto, result: BookmarkDto } | 
-        { key: "bookmark.deleteBookmark", input: number, result: null } | 
-        { key: "bookmark.updateBookmark", input: UpdateBookmarkDto, result: BookmarkDto } | 
+        { key: "bookmark.create", input: CreateBookmarkDto, result: BookmarkDto } | 
+        { key: "bookmark.delete", input: number, result: null } | 
+        { key: "bookmark.update", input: UpdateBookmarkDto, result: BookmarkDto } | 
         { key: "groups.createGroups", input: CreateGroupsDto, result: GroupsDto } | 
         { key: "groups.deleteGroup", input: number, result: null } | 
         { key: "groups.updateGroup", input: UpdateGroupsDto, result: GroupsDto } | 

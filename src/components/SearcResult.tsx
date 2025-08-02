@@ -88,14 +88,14 @@ const SearchResults: Component<SearchResultsProps> = (props) => {
         </div>
       )}
 
-      {props.results.length === 0 && (
+      {/* {props.results.length === 0 && (
         <div class="text-center py-12">
           <div class="text-gray-500 text-lg">No results found</div>
           <div class="text-gray-600 text-sm mt-1">
             Try searching for bookmarks, groups, or workspaces
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

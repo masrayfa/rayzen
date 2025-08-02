@@ -33,6 +33,11 @@ pub trait BookmarkService: Send + Sync {
         ctx: ContextRouter,
         query: &str,
     ) -> Result<Vec<BookmarkDto>, String>;
+    async fn get_by_group(
+        &self,
+        ctx: ContextRouter,
+        groupId: i32,
+    ) -> Result<Vec<BookmarkDto>, String>;
     async fn update_bookmark(
         &self,
         ctx: ContextRouter,
@@ -81,6 +86,20 @@ impl BookmarkService for BookmarkServiceImpl {
             .map_err(|e| e.to_string())?;
 
         Ok(bookmarks.into_iter().map(Into::into).collect())
+    }
+
+    async fn get_by_group(
+        &self,
+        ctx: ContextRouter,
+        group_id: i32,
+    ) -> Result<Vec<BookmarkDto>, String> {
+        let bookmarks_by_group = self
+            .bookmark_repository
+            .get_by_group(&ctx.db, group_id)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(bookmarks_by_group.into_iter().map(Into::into).collect())
     }
 
     async fn update_bookmark(

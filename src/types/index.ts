@@ -1,3 +1,4 @@
+export * from './binding';
 export interface SearchResult {
   id: number;
   title: string;

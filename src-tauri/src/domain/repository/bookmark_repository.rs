@@ -18,12 +18,17 @@ pub trait BookmarkRepository: Send + Sync {
         db: &DatabaseConnection,
         id: i32,
     ) -> Result<Option<BookmarkModel>, DbErr>;
+    async fn find_all(&self, db: &DatabaseConnection) -> Result<Vec<BookmarkModel>, DbErr>;
     async fn search(
         &self,
         db: &DatabaseConnection,
         query: &str,
     ) -> Result<Vec<bookmark::Model>, DbErr>;
-    async fn find_all(&self, db: &DatabaseConnection) -> Result<Vec<BookmarkModel>, DbErr>;
+    async fn get_by_group(
+        &self,
+        db: &DatabaseConnection,
+        group_id: i32,
+    ) -> Result<Vec<BookmarkModel>, DbErr>;
     async fn update(
         &self,
         db: &DatabaseConnection,
@@ -62,6 +67,16 @@ impl BookmarkRepository for BookmarkRepositoryImpl {
         Ok(bookmark)
     }
 
+    async fn find_all(&self, db: &DatabaseConnection) -> Result<Vec<BookmarkModel>, DbErr> {
+        let bookmarks = Bookmark::find().all(db).await?;
+        let list_of_bookmarks = bookmarks
+            .into_iter()
+            .map(|b| b.into())
+            .collect::<Vec<BookmarkModel>>();
+
+        Ok(list_of_bookmarks)
+    }
+
     async fn search(
         &self,
         db: &DatabaseConnection,
@@ -84,14 +99,14 @@ impl BookmarkRepository for BookmarkRepositoryImpl {
         bookmark::Entity::find().filter(condition).all(db).await
     }
 
-    async fn find_all(&self, db: &DatabaseConnection) -> Result<Vec<BookmarkModel>, DbErr> {
-        let bookmarks = Bookmark::find().all(db).await?;
-        let list_of_bookmarks = bookmarks
-            .into_iter()
-            .map(|b| b.into())
-            .collect::<Vec<BookmarkModel>>();
+    async fn get_by_group(
+        &self,
+        db: &DatabaseConnection,
+        group_id: i32,
+    ) -> Result<Vec<BookmarkModel>, DbErr> {
+        let condition = Condition::all().add(Expr::col(bookmark::Column::GroupId).is(group_id));
 
-        Ok(list_of_bookmarks)
+        bookmark::Entity::find().filter(condition).all(db).await
     }
 
     async fn update(
