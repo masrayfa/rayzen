@@ -1,7 +1,7 @@
 import { Component, createResource, createSignal, Show } from 'solid-js';
 import { GroupsDto, SearchResult } from './types';
 import { api } from './rpc';
-import SearchResults from './components/SearcResult';
+import SearchResults from './components/SearchResult';
 import { SearchInput } from './components/SearchInput';
 import ListOfGroups from './components/ListOfGroups';
 import { useGroupBookmarks } from './hooks/useGroupBookmarks';
@@ -9,12 +9,15 @@ import GroupBookmarksList from './components/GroupBookmarksList';
 import { SelectWorkspace } from './components/SelectWorkspace';
 
 const App: Component = () => {
-  const [results, setResults] = createSignal<SearchResult[]>([]);
-  const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [selectedGroup, setSelectedGroup] = createSignal<GroupsDto | null>(
     null
   );
   const [selectedWorkspaceId, setSelectedWorkspaceId] = createSignal(0);
+  const [results, setResults] = createSignal<SearchResult[]>([]);
+  const [selectedIndex, setSelectedIndex] = createSignal(0);
+  const [viewMode, setViewMode] = createSignal<
+    'groups' | 'bookmarks' | 'search'
+  >('groups');
 
   const {
     bookmarks: groupBookmarksList,
@@ -40,6 +43,7 @@ const App: Component = () => {
     if (!query.trim()) {
       setResults([]);
       setSelectedIndex(0);
+      setViewMode('groups');
       return;
     }
 
@@ -59,6 +63,8 @@ const App: Component = () => {
 
     setResults(searchResults);
     setSelectedIndex(0); // Reset selection when new results come in
+    setViewMode('search');
+    setSelectedGroup(null); // Clear selected group when searching
   };
 
   const handleNavigate = (direction: 'up' | 'down') => {
@@ -84,48 +90,60 @@ const App: Component = () => {
     }
   };
 
-  const handleSelectItem = (result: SearchResult) => {
-    if (result.url) {
-      window.open(result.url, '_blank');
-    }
-  };
-
   const handleGroupSelect = (group: GroupsDto) => {
     setSelectedGroup(group);
     selectGroup(group.id);
   };
 
+  const handleCloseGroupBookmarks = () => {
+    setSelectedGroup(null);
+    clearSelection();
+    setViewMode('groups');
+  };
+
+  const handleBookmarkSelect = (bookmark: SearchResult) => {
+    if (bookmark.url) {
+      window.open(bookmark.url, '_blank');
+    }
+  };
+
   return (
     <div class="min-h-screen bg-black">
-      <div class="flex static gap-1">
+      <div>
         <SearchInput
           onSearch={handleSearch}
           onNavigate={handleNavigate}
           onEnter={handleEnter}
         />
-        <SelectWorkspace />
-
-        {/* Organization Component */}
+        <div class="flex static gap-1">
+          <SelectWorkspace />
+        </div>
       </div>
       <div class="px-8 py-8">
-        <SearchResults
-          results={results()}
-          selectedIndex={selectedIndex()}
-          onSelectionChange={setSelectedIndex}
-          onSelectItem={handleSelectItem}
-        />
+        {/* Search Results Section */}
+        <Show when={viewMode() === 'search'}>
+          <SearchResults
+            results={results()}
+            selectedIndex={selectedIndex()}
+            onSelectionChange={setSelectedIndex}
+            onSelectItem={handleBookmarkSelect}
+          />
+        </Show>
 
         {/* Groups Section */}
-        <ListOfGroups
-          groups={groups()}
-          loading={groups.loading}
-          error={groups.error}
-          onGroupSelect={handleGroupSelect}
-          selectedGroupId={selectedGroupId()}
-        />
+        <div class="flex flex-col gap-4">
+          <Show when={viewMode() === 'groups'}>
+            <ListOfGroups
+              groups={groups()}
+              loading={groups.loading}
+              error={groups.error}
+              onGroupSelect={handleGroupSelect}
+              selectedGroupId={selectedGroup()?.id || 0}
+            />
+          </Show>
 
-        {/* Group Bookmarks Section */}
-        {/* <Show when={selectedGroup()}>
+          {/* Group Bookmarks Section */}
+          <Show when={selectedGroup()}>
             <GroupBookmarksList
               group={selectedGroup()}
               bookmarks={groupBookmarksList()}
@@ -134,22 +152,8 @@ const App: Component = () => {
               onClose={handleCloseGroupBookmarks}
               onBookmarkSelect={handleBookmarkSelect}
             />
-          </Show> */}
-
-        {/* Debug Info - Remove in production */}
-        {import.meta.env.DEV && (
-          <div class="bg-gray-500/10 rounded p-4 text-xs text-gray-400 mt-10">
-            <details>
-              <summary class="cursor-pointer">Debug Info</summary>
-              <div class="mt-2 space-y-1">
-                <div>Selected Group: {selectedGroup()?.name || 'None'}</div>
-                <div>Group Bookmarks: {groupBookmarksList().length}</div>
-                <div>Search Results: {results().length}</div>
-                <div>Groups Total: {groups()?.length || 0}</div>
-              </div>
-            </details>
-          </div>
-        )}
+          </Show>
+        </div>
 
         <div class="fixed bottom-4 right-4 text-xs text-gray-500">
           <div>↑↓ Navigate • Enter Open • Esc Clear</div>

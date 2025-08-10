@@ -13,7 +13,7 @@ export function useGroupBookmarks() {
 
     console.log('🔍 Fetching bookmarks for group:', groupId);
     try {
-      // Sesuaikan dengan API endpoint Anda
+      // Sesuaikan dengan API endpoint
       const bookmarks = await api.query(['bookmark.getByGroup', groupId]);
       console.log('✅ Group bookmarks fetched:', bookmarks.length);
 
