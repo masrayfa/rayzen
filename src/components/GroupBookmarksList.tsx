@@ -20,18 +20,12 @@ interface GroupBookmarksListProps {
 const GroupBookmarksList: Component<GroupBookmarksListProps> = (props) => {
   return (
     <Show when={props.group}>
-      <div class="bg-gray-800 rounded-lg p-6 border border-gray-600">
+      <div class="p-6 h-screen overflow-y-auto">
         {/* Header */}
         <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center space-x-3">
-            <FiBookmark class="text-green-500" />
-            <h3 class="text-lg font-semibold text-white">
-              Bookmarks in "{props.group?.name}"
-            </h3>
-          </div>
           <button
             onClick={props.onClose}
-            class="p-2 hover:bg-gray-700 rounded transition-colors"
+            class="p-2 hover:bg-gray-500/10 rounded transition-colors"
             title="Close"
           >
             <FiX class="text-gray-400" />
@@ -41,7 +35,7 @@ const GroupBookmarksList: Component<GroupBookmarksListProps> = (props) => {
         {/* Loading State */}
         <Show when={props.loading}>
           <div class="flex items-center justify-center py-8">
-            <FiLoader class="animate-spin mr-2 text-blue-500" />
+            <FiLoader class="animate-spin mr-2 text-red-500" />
             <span class="text-gray-300">Loading bookmarks...</span>
           </div>
         </Show>
@@ -58,7 +52,7 @@ const GroupBookmarksList: Component<GroupBookmarksListProps> = (props) => {
 
         {/* Bookmarks List */}
         <Show when={!props.loading && !props.error}>
-          <div class="space-y-3 max-h-96 overflow-y-auto">
+          <div class="space-y-3 max-h-96">
             <For
               each={props.bookmarks}
               fallback={
@@ -70,13 +64,13 @@ const GroupBookmarksList: Component<GroupBookmarksListProps> = (props) => {
             >
               {(bookmark) => (
                 <div
-                  class="group bg-gray-700/50 hover:bg-gray-700 rounded-lg p-4 cursor-pointer transition-all border border-gray-600 hover:border-gray-500"
+                  class="group hover:bg-gray-500/10 rounded-lg p-4 cursor-pointer transition-all"
                   onClick={() => props.onBookmarkSelect(bookmark)}
                 >
                   <div class="flex items-start justify-between">
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center space-x-2 mb-2">
-                        <h4 class="font-medium text-white truncate group-hover:text-blue-300 transition-colors">
+                        <h4 class="font-medium text-white truncate group-hover:text-red-300 transition-colors">
                           {bookmark.title}
                         </h4>
                         {bookmark.is_favorite && (
@@ -112,7 +106,7 @@ const GroupBookmarksList: Component<GroupBookmarksListProps> = (props) => {
                         )}
                     </div>
 
-                    <FiExternalLink class="text-gray-400 group-hover:text-blue-400 flex-shrink-0 ml-2 transition-colors" />
+                    <FiExternalLink class="text-gray-400 group-hover:text-red-400 flex-shrink-0 ml-2 transition-colors" />
                   </div>
                 </div>
               )}

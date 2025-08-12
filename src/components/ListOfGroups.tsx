@@ -13,7 +13,7 @@ interface ListOfGroupsProps {
 
 const ListOfGroups = (props: ListOfGroupsProps) => {
   return (
-    <div class="w-full space-y-2">
+    <div class="space-y-2 max-w-xs">
       <Show when={props.loading}>
         <div class="flex items-center justify-center p-8">
           <FiLoader class="animate-spin mr-3 text-blue-500" size={20} />
@@ -43,7 +43,7 @@ const ListOfGroups = (props: ListOfGroupsProps) => {
             </div>
           }
         >
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div class="flex flex-col">
             <For each={props.groups}>
               {(group) => {
                 const isSelected = () => props.selectedGroupId === group.id;
@@ -51,30 +51,20 @@ const ListOfGroups = (props: ListOfGroupsProps) => {
                   <Card
                     class={`cursor-pointer transition-all duration-200 border-0 hover:scale-105 hover:shadow-lg ${
                       isSelected()
-                        ? 'bg-blue-600/20 border-blue-500 ring-1 ring-blue-500'
-                        : 'bg-gray-800/50 hover:bg-gray-700/50'
+                        ? 'bg-gray-500/20 border-gray-500/20 ring-1 ring-gray-500/30'
+                        : 'bg-gray-500/10 hover:bg-gray-500/20'
                     }`}
                     onclick={() => props.onGroupSelect?.(group)}
                   >
-                    <CardContent class="p-6">
+                    <CardContent class="p-3">
                       <div class="flex items-center space-x-4">
-                        <div
-                          class={`p-2 rounded-lg ${
-                            isSelected() ? 'bg-blue-500/20' : 'bg-gray-600/50'
-                          }`}
-                        >
-                          <FiFolder
-                            class={`flex-shrink-0 ${
-                              isSelected() ? 'text-blue-400' : 'text-gray-400'
-                            }`}
-                            size={20}
-                          />
-                        </div>
+                        <FiFolder
+                          class={`flex-shrink-0 ${'text-gray-400'}`}
+                          size={20}
+                        />
                         <div class="flex-1 min-w-0">
                           <h3
-                            class={`font-medium truncate ${
-                              isSelected() ? 'text-blue-300' : 'text-white'
-                            }`}
+                            class={`text-sm font-medium truncate ${'text-white'}`}
                           >
                             {group.name}
                           </h3>
@@ -93,15 +83,6 @@ const ListOfGroups = (props: ListOfGroupsProps) => {
                           )} */}
                         </div>
                       </div>
-
-                      {/* Hover effect indicator */}
-                      <div
-                        class={`mt-3 h-1 rounded-full transition-all ${
-                          isSelected()
-                            ? 'bg-blue-500'
-                            : 'bg-transparent group-hover:bg-gray-600'
-                        }`}
-                      />
                     </CardContent>
                   </Card>
                 );

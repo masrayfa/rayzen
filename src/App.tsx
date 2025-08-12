@@ -7,6 +7,8 @@ import ListOfGroups from './components/ListOfGroups';
 import { useGroupBookmarks } from './hooks/useGroupBookmarks';
 import GroupBookmarksList from './components/GroupBookmarksList';
 import { SelectWorkspace } from './components/SelectWorkspace';
+import { Button } from './components/ui/button';
+import { FiPlus } from 'solid-icons/fi';
 
 const App: Component = () => {
   const [selectedGroup, setSelectedGroup] = createSignal<GroupsDto | null>(
@@ -23,12 +25,8 @@ const App: Component = () => {
     bookmarks: groupBookmarksList,
     clearSelection,
     error: bookmarksError,
-    groupBookmarks,
-    hasBookmarks,
-    isGroupSelected,
     loading: bookmarksLoading,
     selectGroup,
-    selectedGroupId,
   } = useGroupBookmarks();
 
   const [groups] = createResource(() =>
@@ -86,7 +84,8 @@ const App: Component = () => {
     const resultsArray = results();
     const selected = resultsArray[selectedIndex()];
     if (selected?.url) {
-      window.open(selected.url, '_blank');
+      // window.open(selected.url, '_blank');
+      window.navigator.clipboard.writeText(selected.url);
     }
   };
 
@@ -103,42 +102,56 @@ const App: Component = () => {
 
   const handleBookmarkSelect = (bookmark: SearchResult) => {
     if (bookmark.url) {
-      window.open(bookmark.url, '_blank');
+      // window.open(bookmark.url, '_blank');
+      window.navigator.clipboard.writeText(bookmark.url);
     }
   };
 
   return (
-    <div class="min-h-screen bg-black">
+    <div class="min-h-screen bg-black ">
       <div>
         <SearchInput
           onSearch={handleSearch}
           onNavigate={handleNavigate}
           onEnter={handleEnter}
         />
-        <div class="flex static gap-1">
+        {/* <div class="flex static gap-1">
           <SelectWorkspace />
-        </div>
+        </div> */}
       </div>
-      <div class="px-8 py-8">
-        {/* Search Results Section */}
-        <Show when={viewMode() === 'search'}>
-          <SearchResults
-            results={results()}
-            selectedIndex={selectedIndex()}
-            onSelectionChange={setSelectedIndex}
-            onSelectItem={handleBookmarkSelect}
-          />
-        </Show>
+      <div class="flex ">
+        <div class="px-8 py-8 bg-gray-500/10 h-screen">
+          {/* { new group } */}
+          <div class="pb-5">
+            <Button
+              variant={'ghost'}
+              class="text-white/80 hover:bg-gray-500/20 hover:text-white"
+            >
+              <FiPlus />
+              New Group
+            </Button>
+          </div>
 
-        {/* Groups Section */}
-        <div class="flex flex-col gap-4">
-          <Show when={viewMode() === 'groups'}>
+          {/* Groups Section */}
+          <div class="flex gap-4">
             <ListOfGroups
               groups={groups()}
               loading={groups.loading}
               error={groups.error}
               onGroupSelect={handleGroupSelect}
               selectedGroupId={selectedGroup()?.id || 0}
+            />
+          </div>
+        </div>
+
+        <div class="w-full p-3">
+          {/* Search Results Section */}
+          <Show when={viewMode() === 'search'}>
+            <SearchResults
+              results={results()}
+              selectedIndex={selectedIndex()}
+              onSelectionChange={setSelectedIndex}
+              onSelectItem={handleBookmarkSelect}
             />
           </Show>
 
