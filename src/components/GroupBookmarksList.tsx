@@ -7,6 +7,7 @@ import {
   FiX,
   FiLoader,
 } from 'solid-icons/fi';
+import { toast } from 'solid-sonner';
 
 interface GroupBookmarksListProps {
   group: GroupsDto | null;
@@ -20,7 +21,7 @@ interface GroupBookmarksListProps {
 const GroupBookmarksList: Component<GroupBookmarksListProps> = (props) => {
   return (
     <Show when={props.group}>
-      <div class="p-6 h-screen overflow-y-auto">
+      <div class="p-6 ">
         {/* Header */}
         <div class="flex items-center justify-between mb-4">
           <button
@@ -65,7 +66,10 @@ const GroupBookmarksList: Component<GroupBookmarksListProps> = (props) => {
               {(bookmark) => (
                 <div
                   class="group hover:bg-gray-500/10 rounded-lg p-4 cursor-pointer transition-all"
-                  onClick={() => props.onBookmarkSelect(bookmark)}
+                  onClick={() => {
+                    props.onBookmarkSelect(bookmark);
+                    toast('Link is copied to clipboard');
+                  }}
                 >
                   <div class="flex items-start justify-between">
                     <div class="flex-1 min-w-0">
@@ -111,18 +115,6 @@ const GroupBookmarksList: Component<GroupBookmarksListProps> = (props) => {
                 </div>
               )}
             </For>
-          </div>
-        </Show>
-
-        {/* Footer */}
-        <Show
-          when={!props.loading && !props.error && props.bookmarks.length > 0}
-        >
-          <div class="mt-4 pt-4 border-t border-gray-600">
-            <p class="text-sm text-gray-400 text-center">
-              {props.bookmarks.length} bookmark
-              {props.bookmarks.length !== 1 ? 's' : ''} found
-            </p>
           </div>
         </Show>
       </div>

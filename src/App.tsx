@@ -9,6 +9,7 @@ import GroupBookmarksList from './components/GroupBookmarksList';
 import { SelectWorkspace } from './components/SelectWorkspace';
 import { Button } from './components/ui/button';
 import { FiPlus } from 'solid-icons/fi';
+import { Toaster } from './components/ui/sonner';
 
 const App: Component = () => {
   const [selectedGroup, setSelectedGroup] = createSignal<GroupsDto | null>(
@@ -108,8 +109,9 @@ const App: Component = () => {
   };
 
   return (
-    <div class="min-h-screen bg-black ">
-      <div>
+    <div class="h-screen bg-black flex flex-col overflow-hidden">
+      {/* Header Section - Fixed */}
+      <div class="flex-shrink-0">
         <SearchInput
           onSearch={handleSearch}
           onNavigate={handleNavigate}
@@ -119,13 +121,16 @@ const App: Component = () => {
           <SelectWorkspace />
         </div> */}
       </div>
-      <div class="flex ">
-        <div class="px-8 py-8 bg-gray-500/10 h-screen">
-          {/* { new group } */}
-          <div class="pb-5">
+
+      {/* Main Content - Flexible */}
+      <div class="flex flex-1 overflow-hidden">
+        {/* Sidebar - Fixed width, no scroll */}
+        <div class="px-8 py-8 bg-gray-500/10 flex-shrink-0">
+          {/* New group button */}
+          <div class="pb-5 ">
             <Button
               variant={'ghost'}
-              class="text-white/80 hover:bg-gray-500/20 hover:text-white"
+              class="text-white/80 hover:bg-gray-500/10 hover:text-white w-full justify-start"
             >
               <FiPlus />
               New Group
@@ -144,7 +149,8 @@ const App: Component = () => {
           </div>
         </div>
 
-        <div class="w-full p-3">
+        {/* Main Content Area - Scrollable */}
+        <div class="flex-1 p-3 overflow-y-auto">
           {/* Search Results Section */}
           <Show when={viewMode() === 'search'}>
             <SearchResults
@@ -167,11 +173,14 @@ const App: Component = () => {
             />
           </Show>
         </div>
-
-        <div class="fixed bottom-4 right-4 text-xs text-gray-500">
-          <div>↑↓ Navigate • Enter Open • Esc Clear</div>
-        </div>
       </div>
+
+      {/* Footer - Fixed */}
+      <div class="fixed bottom-4 right-4 text-xs text-gray-500 flex-shrink-0">
+        <div>↑↓ Navigate • Enter Open • Esc Clear</div>
+      </div>
+
+      <Toaster theme="dark" />
     </div>
   );
 };
