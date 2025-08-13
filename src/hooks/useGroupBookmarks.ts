@@ -6,6 +6,7 @@ export function useGroupBookmarks() {
   const [selectedGroupId, setSelectedGroupId] = createSignal<number | null>(
     null
   );
+  const [workspaceId, setWorkspaceId] = createSignal<number | null>(null);
 
   // Resource untuk fetch bookmarks berdasarkan group yang dipilih
   const [groupBookmarks] = createResource(selectedGroupId, async (groupId) => {
@@ -34,6 +35,21 @@ export function useGroupBookmarks() {
     }
   });
 
+  const [createGroups] = createResource(workspaceId, async (id) => {
+    try {
+      const groups = await api.mutation([
+        'groups.createGroups',
+        { name: 'New Group', workspace_id: id },
+      ]);
+
+      console.log('✅ New group created:', groups);
+      return groups;
+    } catch (error) {
+      console.error('❌ Error creating group:', error);
+      throw error;
+    }
+  });
+
   const selectGroup = (groupId: number) => {
     console.log('📂 Selecting group:', groupId);
     setSelectedGroupId(groupId);
@@ -48,6 +64,11 @@ export function useGroupBookmarks() {
     return selectedGroupId() === groupId;
   };
 
+  const selectWorkspace = (id: number) => {
+    console.log('🏢 Selecting workspace:', id);
+    setWorkspaceId(id);
+  };
+
   return {
     selectedGroupId,
     groupBookmarks,
@@ -58,5 +79,7 @@ export function useGroupBookmarks() {
     error: groupBookmarks.error,
     bookmarks: () => groupBookmarks() || [],
     hasBookmarks: () => (groupBookmarks() || []).length > 0,
+    create: () => createGroups(),
+    selectWorkspace,
   };
 }

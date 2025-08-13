@@ -13,7 +13,7 @@ interface ListOfGroupsProps {
 
 const ListOfGroups = (props: ListOfGroupsProps) => {
   return (
-    <div class="space-y-2 max-w-xs">
+    <div class="space-y-2 w-56">
       <Show when={props.loading}>
         <div class="flex items-center justify-center p-8">
           <FiLoader class="animate-spin mr-3 text-blue-500" size={20} />

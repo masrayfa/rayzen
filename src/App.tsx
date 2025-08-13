@@ -10,12 +10,14 @@ import { SelectWorkspace } from './components/SelectWorkspace';
 import { Button } from './components/ui/button';
 import { FiPlus } from 'solid-icons/fi';
 import { Toaster } from './components/ui/sonner';
+import { useGroups } from './hooks/useGroups';
+import { useWorkspace } from './hooks/useWorkspace';
 
 const App: Component = () => {
   const [selectedGroup, setSelectedGroup] = createSignal<GroupsDto | null>(
     null
   );
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = createSignal(0);
+  // const [selectedWorkspaceId, setSelectedWorkspaceId] = createSignal(0);
   const [results, setResults] = createSignal<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [viewMode, setViewMode] = createSignal<
@@ -29,13 +31,15 @@ const App: Component = () => {
     loading: bookmarksLoading,
     selectGroup,
   } = useGroupBookmarks();
+  const { create: createGroup } = useGroups();
+  const { workspaces, selectedWorkspaceId, selectWorkspace } = useWorkspace();
 
-  const [groups] = createResource(() =>
-    api.query(['groups.getBelongedGroups', 1])
-  );
-
-  const [workspace] = createResource(() =>
-    api.query(['workspace.getWorkspaceById', 1])
+  const [groups] = createResource(
+    selectedWorkspaceId, // This is the source signal that will trigger refetch
+    async (workspaceId) => {
+      console.log('🔄 Fetching groups for workspace:', workspaceId);
+      return await api.query(['groups.getBelongedGroups', workspaceId ?? 0]);
+    }
   );
 
   const handleSearch = async (query: string) => {
@@ -117,9 +121,18 @@ const App: Component = () => {
           onNavigate={handleNavigate}
           onEnter={handleEnter}
         />
-        {/* <div class="flex static gap-1">
-          <SelectWorkspace />
-        </div> */}
+        <div class="flex static gap-1">
+          <SelectWorkspace
+            options={
+              workspaces()?.map((ws) => ({
+                name: ws.name,
+                id: ws.id,
+              })) || []
+            }
+            onSelect={selectWorkspace}
+            selectedWorkspaceId={selectedWorkspaceId() ?? 0}
+          />
+        </div>
       </div>
 
       {/* Main Content - Flexible */}
@@ -131,6 +144,9 @@ const App: Component = () => {
             <Button
               variant={'ghost'}
               class="text-white/80 hover:bg-gray-500/10 hover:text-white w-full justify-start"
+              onclick={() => {
+                createGroup();
+              }}
             >
               <FiPlus />
               New Group
