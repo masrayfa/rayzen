@@ -31,7 +31,8 @@ const App: Component = () => {
     loading: bookmarksLoading,
     selectGroup,
   } = useGroupBookmarks();
-  const { create: createGroup } = useGroups();
+  const { create: createGroup, selectWorkspace: selectWorkspaceForGroups } =
+    useGroups();
   const { workspaces, selectedWorkspaceId, selectWorkspace } = useWorkspace();
 
   const [groups] = createResource(
@@ -115,13 +116,14 @@ const App: Component = () => {
   return (
     <div class="h-screen bg-black flex flex-col overflow-hidden">
       {/* Header Section - Fixed */}
-      <div class="flex-shrink-0">
+      <div>
         <SearchInput
           onSearch={handleSearch}
           onNavigate={handleNavigate}
           onEnter={handleEnter}
         />
-        <div class="flex static gap-1">
+
+        <div>
           <SelectWorkspace
             options={
               workspaces()?.map((ws) => ({
@@ -136,32 +138,35 @@ const App: Component = () => {
       </div>
 
       {/* Main Content - Flexible */}
-      <div class="flex flex-1 overflow-hidden">
+      <div class="flex flex-1 min-h-0">
         {/* Sidebar - Fixed width, no scroll */}
-        <div class="px-8 py-8 bg-gray-500/10 flex-shrink-0">
-          {/* New group button */}
-          <div class="pb-5 ">
-            <Button
-              variant={'ghost'}
-              class="text-white/80 hover:bg-gray-500/10 hover:text-white w-full justify-start"
-              onclick={() => {
-                createGroup();
-              }}
-            >
-              <FiPlus />
-              New Group
-            </Button>
-          </div>
+        <div class="px-8 py-8 bg-gray-500/10 flex flex-col min-h-0 h-full">
+          <div>
+            {/* New group button */}
+            <div class="pb-5 px-2 shrink-0">
+              <Button
+                variant={'ghost'}
+                class="text-white/80 hover:bg-gray-500/10 hover:text-white w-full justify-start cursor-pointer"
+                onclick={() => {
+                  createGroup();
+                  selectWorkspaceForGroups(selectedWorkspaceId() || 0);
+                }}
+              >
+                <FiPlus />
+                New Group
+              </Button>
+            </div>
 
-          {/* Groups Section */}
-          <div class="flex gap-4">
-            <ListOfGroups
-              groups={groups()}
-              loading={groups.loading}
-              error={groups.error}
-              onGroupSelect={handleGroupSelect}
-              selectedGroupId={selectedGroup()?.id || 0}
-            />
+            {/* Groups Section */}
+            <div class="flex flex-col">
+              <ListOfGroups
+                groups={groups()}
+                loading={groups.loading}
+                error={groups.error}
+                onGroupSelect={handleGroupSelect}
+                selectedGroupId={selectedGroup()?.id || 0}
+              />
+            </div>
           </div>
         </div>
 
@@ -192,7 +197,7 @@ const App: Component = () => {
       </div>
 
       {/* Footer - Fixed */}
-      <div class="fixed bottom-4 right-4 text-xs text-gray-500 flex-shrink-0">
+      <div class="fixed bottom-4 right-4 text-xs text-gray-500">
         <div>↑↓ Navigate • Enter Open • Esc Clear</div>
       </div>
 

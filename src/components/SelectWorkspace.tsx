@@ -51,7 +51,7 @@ export function SelectWorkspace(props: SelectWorkspaceProps) {
   };
 
   return (
-    <div class="flex absolute right-10 mt-2">
+    <div class="flex absolute right-10 top-0 mt-2">
       <Select
         value={value()}
         onChange={handleChange}
