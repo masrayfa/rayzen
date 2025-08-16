@@ -7,6 +7,7 @@ use crate::domain::{
 };
 
 use async_trait::async_trait;
+use entity::groups;
 
 pub struct GroupsServiceImpl {
     pub groups_repository: Arc<dyn GroupRepository>,
@@ -98,22 +99,29 @@ impl GroupService for GroupsServiceImpl {
         dto: UpdateGroupsDto,
     ) -> Result<GroupsDto, String> {
         if dto.id.is_none() {
-            return Err("Bookmark ID is required for update".to_string());
+            return Err("Group ID is required for update".to_string());
         }
+
+        // log all received data
+        println!("Received update group data: {:?}", dto);
 
         let id = dto.id.unwrap();
 
-        let found_group = self
+        // Verify group exists (optional, but good practice)
+        let _found_group = self
             .groups_repository
             .get_group_by_id(&ctx.db, id)
             .await
             .map_err(|e| e.to_string())?;
 
+        // Use DTO data directly for update
         let updated_group = self
             .groups_repository
-            .update_group(&ctx.db, id, found_group.into())
+            .update_group(&ctx.db, id, dto.into())
             .await
             .map_err(|e| e.to_string())?;
+
+        println!("Updated group: {:?}", updated_group);
 
         Ok(updated_group.into())
     }

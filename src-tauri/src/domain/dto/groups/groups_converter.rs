@@ -41,3 +41,13 @@ impl UpdateGroupsDto {
         model
     }
 }
+
+impl From<UpdateGroupsDto> for groups::ActiveModel {
+    fn from(dto: UpdateGroupsDto) -> Self {
+        let mut model = groups::ActiveModel {
+            id: Set(dto.id.unwrap_or(0)), // Ensure ID is set
+            ..Default::default()
+        };
+        dto.apply_to_model(model)
+    }
+}

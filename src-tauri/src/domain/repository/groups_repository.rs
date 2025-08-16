@@ -3,7 +3,10 @@ use entity::groups::{self, ActiveModel as GroupsActiveModel, Entity as Groups};
 
 use async_trait::async_trait;
 
-use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait, QueryFilter};
+use sea_orm::{
+    ActiveValue::Set, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait,
+    QueryFilter,
+};
 
 #[async_trait]
 pub trait GroupRepository: Send + Sync {
@@ -90,7 +93,15 @@ impl GroupRepository for GroupRepositoryImpl {
 
         let groups_active_model: GroupsActiveModel = existing_group.into();
 
-        let updated_groups = Groups::update(groups_active_model)
+        let updated_groups = GroupsActiveModel {
+            id: Set(input.id.unwrap()),
+            name: Set(input.name.unwrap()),
+            workspace_id: Set(input.workspace_id.unwrap()),
+            ..groups_active_model
+        };
+
+        let updated_groups = Groups::update(updated_groups)
+            .filter(groups::Column::Id.eq(id))
             .exec(db)
             .await
             .map_err(|e| DbErr::Custom(e.to_string()))?;

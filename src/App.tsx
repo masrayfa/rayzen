@@ -31,11 +31,17 @@ const App: Component = () => {
     loading: bookmarksLoading,
     selectGroup,
   } = useGroupBookmarks();
-  const { create: createGroup, selectWorkspace: selectWorkspaceForGroups } =
-    useGroups();
+  const {
+    createGroup: createGroups,
+    updateGroup: updateGroups,
+    selectWorkspace: selectWorkspaceForGroups,
+    deleteGroup,
+    isCreating,
+    isUpdating,
+  } = useGroups();
   const { workspaces, selectedWorkspaceId, selectWorkspace } = useWorkspace();
 
-  const [groups] = createResource(
+  const [groups, { refetch: refetchGroups }] = createResource(
     selectedWorkspaceId, // This is the source signal that will trigger refetch
     async (workspaceId) => {
       console.log('🔄 Fetching groups for workspace:', workspaceId);
@@ -113,6 +119,43 @@ const App: Component = () => {
     }
   };
 
+  const handleRenameGroup = async ({ id, name }: GroupsDto) => {
+    try {
+      console.log('🔄 Renaming group:', id, name);
+
+      const result = await updateGroups(id, name, selectedWorkspaceId() || 0);
+      console.log('✅ Update result from backend:', result);
+
+      // Add small delay before refetch to ensure backend is updated
+      setTimeout(() => {
+        console.log('🔄 Refetching groups...');
+        refetchGroups();
+      }, 100);
+    } catch (error) {
+      console.error('❌ Error renaming group:', error);
+    }
+  };
+
+  const handleDeleteGroup = async (id: number) => {
+    try {
+      await deleteGroup(id);
+      setSelectedGroup(null);
+      refetchGroups();
+    } catch (error) {
+      console.error('❌ Error deleting group:', error);
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    try {
+      selectWorkspaceForGroups(selectedWorkspaceId() || 0);
+      await createGroups();
+      refetchGroups();
+    } catch (error) {
+      console.error('❌ Error creating group:', error);
+    }
+  };
+
   return (
     <div class="h-screen bg-black flex flex-col overflow-hidden">
       {/* Header Section - Fixed */}
@@ -147,13 +190,11 @@ const App: Component = () => {
               <Button
                 variant={'ghost'}
                 class="text-white/80 hover:bg-gray-500/10 hover:text-white w-full justify-start cursor-pointer"
-                onclick={() => {
-                  createGroup();
-                  selectWorkspaceForGroups(selectedWorkspaceId() || 0);
-                }}
+                onclick={handleCreateGroup}
+                disabled={isCreating() || isUpdating()}
               >
                 <FiPlus />
-                New Group
+                {isCreating() ? ' Creating...' : 'New Group'}
               </Button>
             </div>
 
@@ -165,6 +206,8 @@ const App: Component = () => {
                 error={groups.error}
                 onGroupSelect={handleGroupSelect}
                 selectedGroupId={selectedGroup()?.id || 0}
+                onRenameGroup={handleRenameGroup}
+                onDeleteGroup={handleDeleteGroup}
               />
             </div>
           </div>
