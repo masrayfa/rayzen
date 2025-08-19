@@ -6,18 +6,22 @@ import { SearchInput } from './components/SearchInput';
 import ListOfGroups from './components/ListOfGroups';
 import { useGroupBookmarks } from './hooks/useGroupBookmarks';
 import GroupBookmarksList from './components/GroupBookmarksList';
-import { SelectWorkspace } from './components/SelectWorkspace';
+import { SelectOptions } from './components/SelectOptions';
 import { Button } from './components/ui/button';
-import { FiPlus } from 'solid-icons/fi';
+import { FiPlus, FiSettings } from 'solid-icons/fi';
 import { Toaster } from './components/ui/sonner';
 import { useGroups } from './hooks/useGroups';
 import { useWorkspace } from './hooks/useWorkspace';
+import CreateBookmarkSheet from './components/CreateBookmarkSheet';
+import CreateWorkspaceSheet from './components/CreateWorkspaceSheet';
 
 const App: Component = () => {
   const [selectedGroup, setSelectedGroup] = createSignal<GroupsDto | null>(
     null
   );
-  // const [selectedWorkspaceId, setSelectedWorkspaceId] = createSignal(0);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = createSignal<
+    number | null
+  >(null);
   const [results, setResults] = createSignal<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [viewMode, setViewMode] = createSignal<
@@ -39,7 +43,15 @@ const App: Component = () => {
     isCreating,
     isUpdating,
   } = useGroups();
-  const { workspaces, selectedWorkspaceId, selectWorkspace } = useWorkspace();
+  const {
+    workspaces,
+    createWorkspace,
+    deleteWorkspace,
+    updateWorkspace,
+    isCreating: isCreatingWorkspace,
+    isDeleting: isDeletingWorkspace,
+    isUpdating: isUpdatingWorkspace,
+  } = useWorkspace();
 
   const [groups, { refetch: refetchGroups }] = createResource(
     selectedWorkspaceId, // This is the source signal that will trigger refetch
@@ -119,6 +131,12 @@ const App: Component = () => {
     }
   };
 
+  const handleWorkspaceSelect = (id: number) => {
+    console.log('🏢 Selecting workspace:', id);
+    setSelectedWorkspaceId(id);
+    setSelectedGroup(null);
+  };
+
   const handleRenameGroup = async ({ id, name }: GroupsDto) => {
     try {
       console.log('🔄 Renaming group:', id, name);
@@ -156,6 +174,84 @@ const App: Component = () => {
     }
   };
 
+  const handleCreateBookmark = async (
+    name: string,
+    url: string,
+    selectedGroupId: number
+  ) => {
+    try {
+      console.log('🔄 Creating new bookmark...', {
+        name,
+        url,
+        selectedGroupId,
+      });
+
+      if (!selectedGroupId) {
+        console.error('❌ No group selected');
+        return;
+      }
+
+      const result = await api.mutation([
+        'bookmark.create',
+        {
+          name,
+          url,
+          group_id: selectedGroupId || 0,
+          is_favorite: false,
+          tags: '',
+        },
+      ]);
+
+      console.log('✅ Bookmark created:', result);
+
+      // Refresh bookmarks jika sedang melihat group bookmarks
+      if (selectedGroup()) {
+        selectGroup(selectedGroup()!.id);
+      }
+    } catch (error) {
+      console.error('❌ Error creating bookmark:', error);
+    }
+  };
+
+  const handleCreateWorkspace = async (
+    name: string,
+    organizationId: number
+  ) => {
+    try {
+      console.log('🔄 Creating new workspace...', { name, organizationId });
+
+      const result = await createWorkspace(name, 1);
+      console.log('✅ Workspace created:', result);
+
+      if (result?.id) {
+        setSelectedWorkspaceId(result.id);
+      }
+    } catch (error) {
+      console.error('❌ Error creating workspace:', error);
+    }
+  };
+
+  const handleDeleteWorkspace = async (id: number) => {
+    try {
+      await deleteWorkspace(id);
+
+      // Reset selected workspace if deleted workspace was being selected
+      if (selectedWorkspaceId() === id) {
+        // Select first available workspace or set to 0
+        const remainingWorkspaces = workspaces()?.filter((ws) => ws.id !== id);
+        if (remainingWorkspaces && remainingWorkspaces.length > 0) {
+          setSelectedWorkspaceId(remainingWorkspaces[0].id);
+        } else {
+          setSelectedWorkspaceId(0);
+        }
+      }
+
+      refetchGroups();
+    } catch (error) {
+      console.error('❌ Error deleting workspace:', error);
+    }
+  };
+
   return (
     <div class="h-screen bg-black flex flex-col overflow-hidden">
       {/* Header Section - Fixed */}
@@ -166,17 +262,19 @@ const App: Component = () => {
           onEnter={handleEnter}
         />
 
-        <div>
-          <SelectWorkspace
+        <div class="flex absolute right-20 top-0 mt-2">
+          <SelectOptions
+            placeholder="Select Workspace"
             options={
               workspaces()?.map((ws) => ({
                 name: ws.name,
                 id: ws.id,
               })) || []
             }
-            onSelect={selectWorkspace}
-            selectedWorkspaceId={selectedWorkspaceId() ?? 0}
+            onSelect={handleWorkspaceSelect}
+            selectedId={selectedWorkspaceId() ?? 0}
           />
+          <CreateWorkspaceSheet onSubmit={handleCreateWorkspace} />
         </div>
       </div>
 
@@ -215,6 +313,18 @@ const App: Component = () => {
 
         {/* Main Content Area - Scrollable */}
         <div class="flex-1 p-3 overflow-y-auto">
+          <Show when={selectedWorkspaceId()}>
+            <CreateBookmarkSheet
+              onSubmit={handleCreateBookmark}
+              options={
+                groups()?.map((group) => ({
+                  id: group.id,
+                  name: group.name,
+                })) ?? []
+              }
+              selectedGroupId={selectedGroup()?.id}
+            />
+          </Show>
           {/* Search Results Section */}
           <Show when={viewMode() === 'search'}>
             <SearchResults
@@ -241,6 +351,9 @@ const App: Component = () => {
 
       {/* Footer - Fixed */}
       <div class="fixed bottom-4 right-4 text-xs text-gray-500">
+        <Button class="fixed bottom-10 right-4 cursor-pointer">
+          <FiSettings />
+        </Button>
         <div>↑↓ Navigate • Enter Open • Esc Clear</div>
       </div>
 
