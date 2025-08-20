@@ -1,6 +1,6 @@
 // Organization Repository Implementation
 use async_trait::async_trait;
-use entity::user::{self, ActiveModel as UserActiveModel, Entity as User, Model as UserModel};
+use entity::user::{ActiveModel as UserActiveModel, Entity as User, Model as UserModel};
 use sea_orm::{DatabaseConnection, DbErr, EntityTrait};
 
 #[async_trait]

@@ -11,6 +11,7 @@ export type Procedures = {
         { key: "groups.getGroupById", input: number, result: GroupsDto } | 
         { key: "groups.getGroups", input: never, result: GroupsDto[] } | 
         { key: "organization.getOrganizationById", input: number, result: OrganizationDto } | 
+        { key: "organization.getOrganizationByUserId", input: number, result: OrganizationDto[] } | 
         { key: "organization.getOrganizations", input: never, result: OrganizationDto[] } | 
         { key: "users.getUserById", input: number, result: UserDto } | 
         { key: "users.getUsers", input: never, result: UserDto[] } | 

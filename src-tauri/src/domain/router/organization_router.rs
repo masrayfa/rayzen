@@ -32,6 +32,16 @@ pub fn create_organization_router() -> RouterBuilder<ContextRouter> {
                     .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e))
             })
         })
+        .query("getOrganizationByUserId", |t| {
+            t.resolver(|ctx: ContextRouter, input: i32| async move {
+                let repo = Arc::new(OrganizationRepositoryImpl::new());
+                let service = OrganizationServiceImpl::new(repo);
+                service
+                    .get_organization_by_user_id(ctx, input)
+                    .await
+                    .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e))
+            })
+        })
         .mutation("createOrganization", |t| {
             t.resolver(
                 |ctx: ContextRouter, input: CreateOrganizationDto| async move {

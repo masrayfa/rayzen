@@ -4,12 +4,7 @@ pub mod organization_router;
 pub mod user;
 pub mod workspace_router;
 
-use crate::domain::service::{
-    bookmark_service::{BookmarkService, BookmarkServiceImpl},
-    group_service::{GroupService, GroupsServiceImpl},
-    organization_service::OrganizationService,
-    workspace_service::{WorkspaceService, WorkspaceServiceImpl},
-};
+use crate::domain::service::{bookmark_service, group_service, workspace_service};
 
 use std::{
     env,
@@ -19,7 +14,6 @@ use std::{
 
 use rspc::{Config, Router};
 use sea_orm::DatabaseConnection;
-use tauri::webview::Cookie;
 
 pub struct ContextRouter {
     pub db: Arc<DatabaseConnection>,

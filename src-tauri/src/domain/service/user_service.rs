@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::domain::{
     dto::user::user_dto::{CreateUserDto, UpdateUserDto, UserDto},
-    repository::user_repository::{self, UserRepository},
+    repository::user_repository::UserRepository,
     router::ContextRouter,
 };
 

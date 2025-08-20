@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use entity::bookmark;
 use rspc::*;
 
 // Import DTOs with Specta support

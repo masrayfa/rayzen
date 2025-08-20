@@ -1,7 +1,10 @@
 // Organization Repository Implementation
 use async_trait::async_trait;
-use entity::organization::{self, ActiveModel as OrganizationActiveModel, Entity as Organization};
-use sea_orm::{DatabaseConnection, DbErr, EntityTrait};
+use entity::{
+    organization::{self, ActiveModel as OrganizationActiveModel, Entity as Organization},
+    user::Column,
+};
+use sea_orm::{prelude::Expr, Condition, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 
 #[async_trait]
 pub trait OrganizationRepository: Send + Sync {
@@ -15,6 +18,11 @@ pub trait OrganizationRepository: Send + Sync {
         db: &DatabaseConnection,
         id: i32,
     ) -> Result<organization::Model, DbErr>;
+    async fn get_organization_by_user_id(
+        &self,
+        db: &DatabaseConnection,
+        user_id: i32,
+    ) -> Result<Vec<organization::Model>, DbErr>;
     async fn update_organization(
         &self,
         db: &DatabaseConnection,
@@ -64,6 +72,23 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
             .await
             .map_err(|e| DbErr::Custom(e.to_string()))?;
         organization.ok_or(DbErr::RecordNotFound("Organization not found".to_string()))
+    }
+
+    async fn get_organization_by_user_id(
+        &self,
+        db: &DatabaseConnection,
+        user_id: i32,
+    ) -> Result<Vec<organization::Model>, DbErr> {
+        let condition = Condition::all().add(Expr::col(Column::Id).eq(user_id));
+
+        let organizations = Organization::find().filter(condition).all(db).await?;
+
+        let organizations = organizations
+            .into_iter()
+            .map(|org| org.into())
+            .collect::<Vec<organization::Model>>();
+
+        Ok(organizations)
     }
 
     async fn update_organization(

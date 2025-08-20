@@ -1,12 +1,8 @@
-use chrono::NaiveDateTime;
 use entity::groups::{self, ActiveModel as GroupsActiveModel, Entity as Groups};
 
 use async_trait::async_trait;
 
-use sea_orm::{
-    ActiveValue::Set, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait,
-    QueryFilter,
-};
+use sea_orm::{ActiveValue::Set, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 
 #[async_trait]
 pub trait GroupRepository: Send + Sync {

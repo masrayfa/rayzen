@@ -1,8 +1,6 @@
-use crate::domain::dto::workspace::workspace_dto::WorkspaceDto;
-
 use async_trait::async_trait;
 use entity::workspace::{
-    self, ActiveModel as WorkspaceActiveModel, Entity as Workspace, Model as WorkspaceModel,
+    ActiveModel as WorkspaceActiveModel, Entity as Workspace, Model as WorkspaceModel,
 };
 use sea_orm::{DatabaseConnection, DbErr, EntityTrait};
 

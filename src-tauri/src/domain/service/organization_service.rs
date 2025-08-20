@@ -32,6 +32,11 @@ pub trait OrganizationService: Send + Sync {
         ctx: ContextRouter,
         id: i32,
     ) -> Result<OrganizationDto, String>;
+    async fn get_organization_by_user_id(
+        &self,
+        ctx: ContextRouter,
+        user_id: i32,
+    ) -> Result<Vec<OrganizationDto>, String>;
     async fn update_organization(
         &self,
         ctx: ContextRouter,
@@ -63,6 +68,20 @@ impl OrganizationService for OrganizationServiceImpl {
             .await
             .map_err(|e| e.to_string())?;
         Ok(organization.into())
+    }
+
+    async fn get_organization_by_user_id(
+        &self,
+        ctx: ContextRouter,
+        user_id: i32,
+    ) -> Result<Vec<OrganizationDto>, String> {
+        let organization = self
+            .organization_repository
+            .get_organization_by_user_id(&ctx.db, user_id)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(organization.into_iter().map(Into::into).collect())
     }
 
     async fn create_organization(

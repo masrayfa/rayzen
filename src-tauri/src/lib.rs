@@ -3,7 +3,7 @@ mod domain;
 
 use domain::router;
 use dotenvy;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use rspc_tauri;
 

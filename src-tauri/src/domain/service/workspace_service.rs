@@ -7,7 +7,6 @@ use crate::domain::{
 };
 
 use async_trait::async_trait;
-use entity::workspace;
 
 #[async_trait]
 pub trait WorkspaceService: Send + Sync {

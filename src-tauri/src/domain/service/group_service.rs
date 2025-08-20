@@ -2,12 +2,11 @@ use std::sync::Arc;
 
 use crate::domain::{
     dto::groups::groups_dto::{CreateGroupsDto, GroupsDto, UpdateGroupsDto},
-    repository::groups_repository::{self, GroupRepository},
+    repository::groups_repository::GroupRepository,
     router::ContextRouter,
 };
 
 use async_trait::async_trait;
-use entity::groups;
 
 pub struct GroupsServiceImpl {
     pub groups_repository: Arc<dyn GroupRepository>,
