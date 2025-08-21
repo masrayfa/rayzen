@@ -12,10 +12,12 @@ interface SelectOptionsProps {
     name: string;
     id: number;
   }[];
+  defaultValue?: string;
   placeholder?: string;
   onSelect?: (id: number) => void;
   selectedId?: number; // Simplified to just one selected ID
   class?: string;
+  type?: 'organization' | 'workspace' | 'bookmark';
 }
 
 export function SelectOptions(props: SelectOptionsProps) {
@@ -24,20 +26,31 @@ export function SelectOptions(props: SelectOptionsProps) {
   // Process options to extract names for Select component
   const selectOptions = () => props.options.map((option) => option.name);
 
-  // Set initial value and sync with selectedId prop
   createEffect(() => {
-    console.log('SelectOptions effect - options:', props.options);
-    console.log('SelectOptions effect - selectedId:', props.selectedId);
+    console.log(
+      `SelectOptions effect of ${props.type} - options: ${props.options}`
+    );
+    console.log(`SelectOptions effect ${props.type} - selectedId:`);
 
-    if (props.options.length > 0 && props.selectedId) {
+    // Handle null/undefined selectedId
+    if (props.selectedId == null) {
+      setValue('');
+      return;
+    }
+
+    if (props.options.length > 0 && props.selectedId !== null) {
       const selectedOption = props.options.find(
         (opt) => opt.id === props.selectedId
       );
-      console.log('Found selected option:', selectedOption);
 
       if (selectedOption && value() !== selectedOption.name) {
         setValue(selectedOption.name);
       }
+    } else if (props.options.length > 0 && props.selectedId === null) {
+      // Auto-select first option jika tidak ada selectedId
+      const firstOption = props.options[0];
+      setValue(firstOption.name);
+      props.onSelect?.(firstOption.id);
     }
   });
 

@@ -1,8 +1,7 @@
 // Organization Repository Implementation
 use async_trait::async_trait;
-use entity::{
-    organization::{self, ActiveModel as OrganizationActiveModel, Entity as Organization},
-    user::Column,
+use entity::organization::{
+    self, ActiveModel as OrganizationActiveModel, Column, Entity as Organization,
 };
 use sea_orm::{prelude::Expr, Condition, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 
@@ -79,7 +78,7 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
         db: &DatabaseConnection,
         user_id: i32,
     ) -> Result<Vec<organization::Model>, DbErr> {
-        let condition = Condition::all().add(Expr::col(Column::Id).eq(user_id));
+        let condition = Condition::all().add(Expr::col(Column::UserId).eq(user_id));
 
         let organizations = Organization::find().filter(condition).all(db).await?;
 

@@ -1,15 +1,17 @@
-import { Component, createSignal, Show, For } from 'solid-js';
+import { Component, createSignal, Show, For, createEffect } from 'solid-js';
 import { Button } from './ui/button';
 import { SelectOptions } from './SelectOptions';
 import { FiPlus, FiEdit2, FiTrash2, FiSave, FiX } from 'solid-icons/fi';
 import { useOrganization } from '../hooks/useOrganization';
+import { useWorkspace } from '~/hooks/useWorkspace';
 
-interface OrganizationSettingsProps {}
+interface OrganizationSettingsProps {
+  organizations: Array<{ id: number; name: string }>;
+  organizationId: number;
+}
 
-const OrganizationSettings: Component<OrganizationSettingsProps> = () => {
+const OrganizationSettings: Component<OrganizationSettingsProps> = (props) => {
   const {
-    organization,
-    organizations,
     isCreating: isCreatingOrg,
     isUpdating: isUpdatingOrg,
     isDeleting: isDeletingOrg,
@@ -20,21 +22,36 @@ const OrganizationSettings: Component<OrganizationSettingsProps> = () => {
     deleteOrganization,
   } = useOrganization();
 
+  const { setSelectedOrgId } = useWorkspace();
+
   // Organization signals
   const [showCreateOrgForm, setShowCreateOrgForm] = createSignal(false);
   const [editingOrgId, setEditingOrgId] = createSignal<number | null>(null);
   const [newOrgName, setNewOrgName] = createSignal('');
   const [editOrgName, setEditOrgName] = createSignal('');
 
+  createEffect(() => {
+    const orgId = selectedOrganizationId();
+
+    if (orgId) {
+      console.log('refetching workspaces for organization:', orgId);
+      setSelectedOrgId(orgId);
+    }
+  });
+
   const handleCreateOrganization = async () => {
     if (!newOrgName().trim()) return;
 
     try {
       // Assuming user ID is 1 for now - replace with actual user ID
-      await createOrganization(1, newOrgName().trim());
+      const result = await createOrganization(1, newOrgName().trim());
       setNewOrgName('');
       setShowCreateOrgForm(false);
-      // Refresh organizations list here
+
+      // Auto-select the newly created organization
+      if (result?.id) {
+        selectOrganization(result.id);
+      }
     } catch (error) {
       console.error('Failed to create organization:', error);
     }
@@ -48,7 +65,6 @@ const OrganizationSettings: Component<OrganizationSettingsProps> = () => {
       await updateOrganization(id, 1, editOrgName().trim());
       setEditingOrgId(null);
       setEditOrgName('');
-      // Refresh organizations list here
     } catch (error) {
       console.error('Failed to update organization:', error);
     }
@@ -62,11 +78,25 @@ const OrganizationSettings: Component<OrganizationSettingsProps> = () => {
     ) {
       try {
         await deleteOrganization(id);
-        // Refresh organizations list here
+
+        // If we deleted the currently selected organization, select another one
+        if (selectedOrganizationId() === id) {
+          const remainingOrgs = props.organizations?.filter(
+            (org) => org.id !== id
+          );
+          if (remainingOrgs && remainingOrgs.length > 0) {
+            selectOrganization(remainingOrgs[0].id);
+          }
+        }
       } catch (error) {
         console.error('Failed to delete organization:', error);
       }
     }
+  };
+
+  const handleOrganizationSelect = (id: number, name: string) => {
+    console.log('🏢 Organization selected from dropdown:', id);
+    selectOrganization(id);
   };
 
   const startEditingOrg = (id: number, name: string) => {
@@ -79,23 +109,21 @@ const OrganizationSettings: Component<OrganizationSettingsProps> = () => {
     setEditOrgName('');
   };
 
+  createEffect(() => {
+    const orgId = selectedOrganizationId();
+    if (orgId && props.organizations) {
+      const selectedOrg = props.organizations!.find((org) => org.id === orgId);
+      if (selectedOrg) {
+        console.log('🏢 Selected organization:', selectedOrg);
+      }
+      setEditingOrgId(null); // Reset editing state when organization changes
+      setEditOrgName('');
+    }
+  });
+
   return (
     <div class="text-white space-y-6">
       <h3 class="text-xl font-bold">Organization Management</h3>
-
-      {/* Active Organization Selector */}
-      <div class="space-y-2">
-        <label class="text-sm text-gray-400">Active Organization</label>
-        <SelectOptions
-          placeholder="Select Organization"
-          options={(organizations() ?? []).map((org) => ({
-            name: org.name,
-            id: org.id,
-          }))}
-          onSelect={selectOrganization}
-          selectedId={selectedOrganizationId() ?? 0}
-        />
-      </div>
 
       {/* Create Organization Button */}
       <div class="flex justify-end">
@@ -152,79 +180,100 @@ const OrganizationSettings: Component<OrganizationSettingsProps> = () => {
       <div class="space-y-3">
         <h4 class="font-medium text-gray-300">Your Organizations</h4>
         <div class="space-y-2">
-          <For each={organizations()}>
-            {(org) => (
-              <div class="bg-gray-800/30 p-4 rounded-lg flex items-center justify-between">
-                <Show
-                  when={editingOrgId() === org.id}
-                  fallback={
-                    <div class="flex items-center gap-3">
-                      <span class="text-white font-medium">{org.name}</span>
-                      <Show when={selectedOrganizationId() === org.id}>
-                        <span class="text-xs bg-blue-600 px-2 py-1 rounded font-medium">
-                          Active
-                        </span>
-                      </Show>
-                    </div>
-                  }
-                >
-                  <input
-                    type="text"
-                    class="bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                    value={editOrgName()}
-                    onInput={(e) => setEditOrgName(e.currentTarget.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') handleUpdateOrganization(org.id);
-                      if (e.key === 'Escape') cancelEditingOrg();
-                    }}
-                  />
-                </Show>
-
-                <div class="flex gap-2">
+          <Show
+            when={props.organizations && props.organizations!.length > 0}
+            fallback={
+              <div class="text-gray-400 text-sm bg-gray-800/30 p-4 rounded-lg">
+                No organizations found. Create your first organization above.
+              </div>
+            }
+          >
+            <For each={props.organizations}>
+              {(org) => (
+                <div class="bg-gray-800/30 p-4 rounded-lg flex items-center justify-between">
                   <Show
                     when={editingOrgId() === org.id}
                     fallback={
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onclick={() => startEditingOrg(org.id, org.name)}
-                          disabled={isUpdatingOrg()}
-                        >
-                          <FiEdit2 size={16} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onclick={() => handleDeleteOrganization(org.id)}
-                          disabled={isDeletingOrg()}
-                          class="text-red-400 hover:text-red-300"
-                        >
-                          <FiTrash2 size={16} />
-                        </Button>
-                      </>
+                      <div class="flex items-center gap-3">
+                        <span class="text-white font-medium">{org.name}</span>
+                      </div>
                     }
                   >
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onclick={() => handleUpdateOrganization(org.id)}
-                      disabled={isUpdatingOrg() || !editOrgName().trim()}
-                    >
-                      <FiSave size={16} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onclick={cancelEditingOrg}
-                    >
-                      <FiX size={16} />
-                    </Button>
+                    <input
+                      type="text"
+                      class="bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      value={editOrgName()}
+                      onInput={(e) => setEditOrgName(e.currentTarget.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') handleUpdateOrganization(org.id);
+                        if (e.key === 'Escape') cancelEditingOrg();
+                      }}
+                    />
                   </Show>
+
+                  <div class="flex gap-2">
+                    <Show
+                      when={editingOrgId() === org.id}
+                      fallback={
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onclick={() =>
+                              handleOrganizationSelect(org.id, org.name)
+                            }
+                            disabled={props.organizationId === org.id}
+                            class={
+                              props.organizationId === org.id
+                                ? 'opacity-50'
+                                : 'border-blue-500 text-blue-400 hover:bg-blue-500/10'
+                            }
+                          >
+                            {props.organizationId === org.id
+                              ? 'Active'
+                              : 'Select'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onclick={() => startEditingOrg(org.id, org.name)}
+                            disabled={isUpdatingOrg()}
+                          >
+                            <FiEdit2 size={16} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onclick={() => handleDeleteOrganization(org.id)}
+                            disabled={isDeletingOrg()}
+                            class="text-red-400 hover:text-red-300"
+                          >
+                            <FiTrash2 size={16} />
+                          </Button>
+                        </>
+                      }
+                    >
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onclick={() => handleUpdateOrganization(org.id)}
+                        disabled={isUpdatingOrg() || !editOrgName().trim()}
+                      >
+                        <FiSave size={16} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onclick={cancelEditingOrg}
+                      >
+                        <FiX size={16} />
+                      </Button>
+                    </Show>
+                  </div>
                 </div>
-              </div>
-            )}
-          </For>
+              )}
+            </For>
+          </Show>
         </div>
       </div>
     </div>

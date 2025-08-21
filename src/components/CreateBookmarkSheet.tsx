@@ -124,6 +124,7 @@ const CreateBookmarkSheet = (props: CreateBookmarkSheetProps) => {
                   onSelect={handleGroupSelect}
                   selectedId={selectedGroupId()}
                   class="w-full"
+                  type="bookmark"
                 />
               </div>
             </div>

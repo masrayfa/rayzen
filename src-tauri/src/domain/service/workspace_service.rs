@@ -26,7 +26,11 @@ pub trait WorkspaceService: Send + Sync {
         dto: UpdateWorkspaceDto,
     ) -> Result<WorkspaceDto, String>;
     async fn delete_workspace(&self, ctx: ContextRouter, id: i32) -> Result<(), String>;
-    async fn list_workspace(&self, ctx: ContextRouter) -> Result<Vec<WorkspaceDto>, String>;
+    async fn list_workspace(
+        &self,
+        ctx: ContextRouter,
+        organization_id: i32,
+    ) -> Result<Vec<WorkspaceDto>, String>;
 }
 
 pub struct WorkspaceServiceImpl {
@@ -107,12 +111,18 @@ impl WorkspaceService for WorkspaceServiceImpl {
         Ok(())
     }
 
-    async fn list_workspace(&self, ctx: ContextRouter) -> Result<Vec<WorkspaceDto>, String> {
+    async fn list_workspace(
+        &self,
+        ctx: ContextRouter,
+        organization_id: i32,
+    ) -> Result<Vec<WorkspaceDto>, String> {
         let workspaces = self
             .workspace_repository
-            .list_workspace(&ctx.db)
+            .list_workspace(&ctx.db, organization_id)
             .await
             .map_err(|e| e.to_string())?;
+
+        println!("Workspaces found: {:?}", workspaces);
 
         Ok(workspaces.into_iter().map(Into::into).collect())
     }

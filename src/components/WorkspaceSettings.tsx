@@ -1,4 +1,11 @@
-import { Component, createSignal, Show, For, createMemo } from 'solid-js';
+import {
+  Component,
+  createSignal,
+  Show,
+  For,
+  createMemo,
+  createEffect,
+} from 'solid-js';
 import { Button } from './ui/button';
 import {
   FiPlus,
@@ -10,8 +17,11 @@ import {
 } from 'solid-icons/fi';
 import { useWorkspace } from '../hooks/useWorkspace';
 import { useOrganization } from '../hooks/useOrganization';
+import { WorkspaceDto } from '~/types';
 
 interface WorkspaceSettingsProps {
+  workspaces: Array<WorkspaceDto>;
+  selectedOrganizationId: number;
   selectedWorkspaceId: () => number | null;
   onWorkspaceSelect: (id: number) => void;
   onDeleteWorkspace: (id: number) => void;
@@ -26,6 +36,7 @@ const WorkspaceSettings: Component<WorkspaceSettingsProps> = (props) => {
     isCreating: isCreatingWorkspace,
     isUpdating: isUpdatingWorkspace,
     isDeleting: isDeletingWorkspace,
+    refetchWorkspaces,
   } = useWorkspace();
 
   const { selectedOrganizationId } = useOrganization();
@@ -33,7 +44,9 @@ const WorkspaceSettings: Component<WorkspaceSettingsProps> = (props) => {
   // Filter workspaces based on selected organization
   const filteredWorkspaces = createMemo(() => {
     const allWorkspaces = workspaces();
-    const orgId = selectedOrganizationId();
+    const orgId = props.selectedOrganizationId ?? 1;
+
+    console.log('@workspaceSettings::data workspaces', allWorkspaces);
 
     if (!allWorkspaces || !orgId) return [];
 
@@ -51,6 +64,18 @@ const WorkspaceSettings: Component<WorkspaceSettingsProps> = (props) => {
   >(null);
   const [newWorkspaceName, setNewWorkspaceName] = createSignal('');
   const [editWorkspaceName, setEditWorkspaceName] = createSignal('');
+
+  // Reset forms when organization changes
+  createEffect(() => {
+    const orgId = selectedOrganizationId();
+    if (orgId) {
+      // Reset any editing state when organization changes
+      setEditingWorkspaceId(null);
+      setEditWorkspaceName('');
+      setShowCreateWorkspaceForm(false);
+      setNewWorkspaceName('');
+    }
+  });
 
   const handleCreateWorkspace = async () => {
     if (!newWorkspaceName().trim()) return;
@@ -115,14 +140,14 @@ const WorkspaceSettings: Component<WorkspaceSettingsProps> = (props) => {
     <div class="text-white space-y-6">
       <h3 class="text-xl font-bold">Workspace Management</h3>
 
-      <Show when={!selectedOrganizationId()}>
+      <Show when={!props.selectedOrganizationId}>
         <div class="text-yellow-400 text-sm bg-yellow-400/10 p-4 rounded-lg border border-yellow-400/20">
           <div class="font-medium mb-1">Organization Required</div>
           <div>Please select an organization first to manage workspaces.</div>
         </div>
       </Show>
 
-      <Show when={selectedOrganizationId()}>
+      <Show when={props.selectedOrganizationId}>
         {/* Create Workspace Button */}
         <div class="flex justify-end">
           <Button

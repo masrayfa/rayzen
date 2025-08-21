@@ -13,11 +13,11 @@ use rspc::{ErrorCode, Router, RouterBuilder};
 pub fn create_workspace_router() -> RouterBuilder<ContextRouter> {
     Router::<ContextRouter>::new()
         .query("getWorkspaces", |t| {
-            t.resolver(|ctx: ContextRouter, _input: ()| async move {
+            t.resolver(|ctx: ContextRouter, input: i32| async move {
                 let repo = Arc::new(WorkspaceRepositoryImpl::new());
                 let service = WorkspaceServiceImpl::new(repo);
                 service
-                    .list_workspace(ctx)
+                    .list_workspace(ctx, input)
                     .await
                     .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e))
             })

@@ -17,7 +17,7 @@ export type Procedures = {
         { key: "users.getUsers", input: never, result: UserDto[] } | 
         { key: "version", input: never, result: string } | 
         { key: "workspace.getWorkspaceById", input: number, result: WorkspaceDto } | 
-        { key: "workspace.getWorkspaces", input: never, result: WorkspaceDto[] },
+        { key: "workspace.getWorkspaces", input: number, result: WorkspaceDto[] },
     mutations: 
         { key: "bookmark.create", input: CreateBookmarkDto, result: BookmarkDto } | 
         { key: "bookmark.delete", input: number, result: null } | 

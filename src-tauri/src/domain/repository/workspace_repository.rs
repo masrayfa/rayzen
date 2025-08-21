@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 use entity::workspace::{
-    ActiveModel as WorkspaceActiveModel, Entity as Workspace, Model as WorkspaceModel,
+    ActiveModel as WorkspaceActiveModel, Column, Entity as Workspace, Model as WorkspaceModel,
 };
-use sea_orm::{DatabaseConnection, DbErr, EntityTrait};
+use sea_orm::{prelude::Expr, Condition, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 
 #[async_trait]
 pub trait WorkspaceRepository: Send + Sync {
@@ -23,7 +23,11 @@ pub trait WorkspaceRepository: Send + Sync {
         input: WorkspaceActiveModel,
     ) -> Result<WorkspaceModel, DbErr>;
     async fn delete_workspace(&self, db: &DatabaseConnection, id: i32) -> Result<(), DbErr>;
-    async fn list_workspace(&self, db: &DatabaseConnection) -> Result<Vec<WorkspaceModel>, DbErr>;
+    async fn list_workspace(
+        &self,
+        db: &DatabaseConnection,
+        organization_id: i32,
+    ) -> Result<Vec<WorkspaceModel>, DbErr>;
 }
 
 pub struct WorkspaceRepositoryImpl {}
@@ -99,8 +103,15 @@ impl WorkspaceRepository for WorkspaceRepositoryImpl {
         Ok(())
     }
 
-    async fn list_workspace(&self, db: &DatabaseConnection) -> Result<Vec<WorkspaceModel>, DbErr> {
+    async fn list_workspace(
+        &self,
+        db: &DatabaseConnection,
+        organization_id: i32,
+    ) -> Result<Vec<WorkspaceModel>, DbErr> {
+        let condition = Condition::all().add(Expr::col(Column::OrganizationId).eq(organization_id));
+
         let workspaces: Vec<WorkspaceModel> = Workspace::find()
+            .filter(condition)
             .all(db)
             .await
             .map_err(|e| DbErr::Custom(e.to_string()))?;
