@@ -80,19 +80,19 @@ const CreateBookmarkSheet = (props: CreateBookmarkSheetProps) => {
     <div>
       <Sheet open={isOpen()} onOpenChange={setIsOpen}>
         <SheetTrigger>
-          <Button class="bg-gray-500/10 text-white hover:bg-gray-500/20">
+          <Button class="bg-gray-500/10 text-white hover:bg-gray-500/20 cursor-pointer">
             Create Bookmark
           </Button>
         </SheetTrigger>
-        <SheetContent position="right">
+        <SheetContent position="right" class="bg-[#141414] border-0">
           <SheetHeader>
-            <SheetTitle>New Bookmark</SheetTitle>
+            <SheetTitle class="text-white">New Bookmark</SheetTitle>
             <SheetDescription>
               Create a new bookmark to save your favorite links and resources.
             </SheetDescription>
           </SheetHeader>
 
-          <div class="grid gap-4 py-4">
+          <div class="grid gap-4 py-4 text-white">
             <TextField class="grid grid-cols-4 items-center gap-4">
               <TextFieldLabel class="text-right">Name</TextFieldLabel>
               <TextFieldInput

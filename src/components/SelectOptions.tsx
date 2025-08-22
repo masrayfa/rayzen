@@ -92,7 +92,7 @@ export function SelectOptions(props: SelectOptionsProps) {
         >
           <SelectValue<string>>{(state) => state.selectedOption()}</SelectValue>
         </SelectTrigger>
-        <SelectContent class="bg-gray-500/10 text-white border-0" />
+        <SelectContent class="bg-[#141414] text-white border-0" />
       </Select>
     </div>
   );

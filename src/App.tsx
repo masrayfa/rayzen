@@ -144,10 +144,33 @@ const App: Component = () => {
   });
 
   const [groups, { refetch: refetchGroups }] = createResource(
-    selectedWorkspaceId,
-    async (workspaceId) => {
-      console.log('🔄 Fetching groups for workspace:', workspaceId);
-      return await api.query(['groups.getBelongedGroups', workspaceId ?? 0]);
+    () => ({
+      workspaceId: selectedWorkspaceId(),
+      organizationId: selectedOrganizationId(),
+    }),
+    async (deps) => {
+      const { workspaceId, organizationId } = deps;
+
+      if (!organizationId || !workspaceId) {
+        console.log(
+          '🔄 No organization or workspace selected, returning empty groups'
+        );
+        return [];
+      }
+
+      console.log(
+        '🔄 Fetching groups for workspace:',
+        workspaceId,
+        'in org:',
+        organizationId
+      );
+
+      try {
+        return await api.query(['groups.getBelongedGroups', workspaceId]);
+      } catch (error) {
+        console.error('❌ Error fetching groups:', error);
+        return [];
+      }
     }
   );
 
@@ -216,7 +239,7 @@ const App: Component = () => {
     if (!query.trim()) {
       setResults([]);
       setSelectedIndex(0);
-      setViewMode('groups');
+      handleViewModeChange('groups');
       return;
     }
 
@@ -236,7 +259,7 @@ const App: Component = () => {
 
     setResults(searchResults);
     setSelectedIndex(0);
-    setViewMode('search');
+    handleViewModeChange('search');
     setSelectedGroup(null);
   };
 
@@ -266,12 +289,16 @@ const App: Component = () => {
   const handleGroupSelect = (group: GroupsDto) => {
     setSelectedGroup(group);
     selectGroup(group.id);
+
+    if (viewMode() === 'settings') {
+      handleViewModeChange('groups');
+    }
   };
 
   const handleCloseGroupBookmarks = () => {
     setSelectedGroup(null);
     clearSelection();
-    setViewMode('groups');
+    handleViewModeChange('groups');
   };
 
   const handleBookmarkSelect = (bookmark: SearchResult) => {
@@ -399,6 +426,33 @@ const App: Component = () => {
     }
   };
 
+  const handleViewModeChange = (
+    newMode: 'groups' | 'bookmarks' | 'search' | 'settings'
+  ) => {
+    // Cleanup logic berdasarkan mode yang akan dibuka
+    switch (newMode) {
+      case 'settings':
+        // Tutup group bookmarks jika sedang aktif
+        setSelectedGroup(null);
+        clearSelection();
+        break;
+
+      case 'groups':
+        // Tutup search results jika ada
+        setResults([]);
+        setSelectedIndex(0);
+        break;
+
+      case 'search':
+        // Tutup group bookmarks jika sedang aktif
+        setSelectedGroup(null);
+        clearSelection();
+        break;
+    }
+
+    setViewMode(newMode);
+  };
+
   onMount(() => {
     console.log('🔄 App mounted, checking for first-time setup...');
     userCheck();
@@ -477,7 +531,8 @@ const App: Component = () => {
 
           {/* Main Content Area - Scrollable */}
           <div class="flex-1 p-3 overflow-y-auto">
-            <Show when={selectedWorkspaceId()}>
+            {/* deprecated create bookmark sheet */}
+            {/* <Show when={selectedWorkspaceId()}>
               <CreateBookmarkSheet
                 onSubmit={handleCreateBookmark}
                 options={
@@ -488,7 +543,7 @@ const App: Component = () => {
                 }
                 selectedGroupId={selectedGroup()?.id}
               />
-            </Show>
+            </Show> */}
 
             {/* Search Results Section */}
             <Show when={viewMode() === 'search'}>
@@ -502,24 +557,31 @@ const App: Component = () => {
 
             {/* Group Bookmarks Section */}
             <Show when={selectedGroup()}>
-              <GroupBookmarksList
-                group={selectedGroup()}
-                bookmarks={groupBookmarksList()}
-                loading={bookmarksLoading}
-                error={bookmarksError}
-                onClose={handleCloseGroupBookmarks}
-                onBookmarkSelect={handleBookmarkSelect}
-              />
+              <div class="space-y-4">
+                {/* Create Bookmark Button - di dalam group view */}
+                <div class="flex justify-between items-center">
+                  <h2 class="text-xl font-semibold text-white">
+                    {selectedGroup()?.name} Bookmarks
+                  </h2>
+                  <CreateBookmarkSheet
+                    onSubmit={handleCreateBookmark}
+                    options={[
+                      { id: selectedGroup()!.id, name: selectedGroup()!.name },
+                    ]}
+                    selectedGroupId={selectedGroup()?.id}
+                  />
+                </div>
+                <GroupBookmarksList
+                  group={selectedGroup()}
+                  bookmarks={groupBookmarksList()}
+                  loading={bookmarksLoading}
+                  error={bookmarksError}
+                  onClose={handleCloseGroupBookmarks}
+                  onBookmarkSelect={handleBookmarkSelect}
+                />
+              </div>
             </Show>
 
-            {/* {selectedOrganizationId() && (
-              <span class="text-white">
-                Organization:{' '}
-                {(organizations() ?? []).find(
-                  (org) => org.id === selectedOrganizationId()
-                )?.name || 'Unknown'}
-              </span>
-            )} */}
             {/* Settings Section */}
             <Show when={viewMode() === 'settings'}>
               <div class="text-white">
@@ -531,6 +593,47 @@ const App: Component = () => {
                   onWorkspaceSelect={handleWorkspaceSelect}
                   onDeleteWorkspace={handleDeleteWorkspace}
                   onClose={() => setViewMode('groups')}
+                  // Tambah organization handlers
+                  onCreateOrganization={async (name: string) => {
+                    try {
+                      // Assuming user ID is always 1
+                      const userId = currentUser()?.id || 1;
+                      return await api.mutation([
+                        'organization.createOrganization',
+                        { name, user_id: userId },
+                      ]);
+                    } catch (error) {
+                      console.error('Failed to create organization:', error);
+                      throw error;
+                    }
+                  }}
+                  onUpdateOrganization={async (id: number, name: string) => {
+                    try {
+                      const userId = currentUser()?.id || 1;
+                      return await api.mutation([
+                        'organization.updateOrganization',
+                        { id, name, user_id: userId },
+                      ]);
+                    } catch (error) {
+                      console.error('Failed to update organization:', error);
+                      throw error;
+                    }
+                  }}
+                  onDeleteOrganization={async (id: number) => {
+                    try {
+                      return await api.mutation([
+                        'organization.deleteOrganization',
+                        id,
+                      ]);
+                    } catch (error) {
+                      console.error('Failed to delete organization:', error);
+                      throw error;
+                    }
+                  }}
+                  onSelectOrganization={selectOrganization}
+                  isCreatingOrg={false} // Anda bisa menambahkan loading state jika diperlukan
+                  isUpdatingOrg={false}
+                  isDeletingOrg={false}
                 />
               </div>
             </Show>
@@ -541,9 +644,10 @@ const App: Component = () => {
         <div class="fixed bottom-4 right-4 text-xs text-gray-500">
           <Button
             class="fixed bottom-10 right-4 cursor-pointer"
-            onclick={() =>
-              setViewMode(viewMode() === 'settings' ? 'groups' : 'settings')
-            }
+            onclick={() => {
+              const newMode = viewMode() === 'settings' ? 'groups' : 'settings';
+              handleViewModeChange(newMode);
+            }}
           >
             <FiSettings />
           </Button>
