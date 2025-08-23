@@ -1,174 +1,163 @@
-import { createSignal } from 'solid-js';
+import { createSignal, createResource } from 'solid-js';
 import { api } from '../rpc';
+import { GroupsDto } from '~/types';
 
 export function useGroups() {
-  const [workspaceId, setWorkspaceId] = createSignal<number | null>(null);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = createSignal<
+    number | null
+  >(null);
+  const [selectedOrganizationId, setSelectedOrganizationId] = createSignal<
+    number | null
+  >(null);
+  const [selectedGroup, setSelectedGroup] = createSignal<GroupsDto | null>(
+    null
+  );
   const [isCreating, setIsCreating] = createSignal(false);
   const [isUpdating, setIsUpdating] = createSignal(false);
+  const [isDeleting, setIsDeleting] = createSignal(false);
+  const [loading, setLoading] = createSignal(false);
+  const [error, setError] = createSignal<string | null>(null);
 
-  const createGroup = async (name: string = 'New Group') => {
-    const currentWorkspaceId = workspaceId();
-    if (!currentWorkspaceId) {
-      console.error('❌ No workspace selected');
-      return null;
+  // Updated groups resource to handle null workspace
+  const [groups, { refetch: refetchGroups }] = createResource(
+    () => ({
+      workspaceId: selectedWorkspaceId(),
+      organizationId: selectedOrganizationId(),
+    }),
+    async ({ workspaceId, organizationId }) => {
+      setLoading(true);
+      setError(null);
+      // If no workspace selected, return empty array
+      if (!workspaceId || !organizationId) {
+        console.log(
+          'ℹ️ No workspace or organization selected, returning empty groups'
+        );
+        return [];
+      }
+
+      try {
+        console.log('🔄 Fetching groups for workspace:', workspaceId);
+        const groups = await api.query([
+          'groups.getBelongedGroups',
+          [workspaceId, organizationId],
+        ]);
+        console.log('✅ Groups fetched:', groups);
+        setLoading(false);
+        return groups;
+      } catch (error) {
+        console.error('❌ Error getting groups:', error);
+        setError(
+          error instanceof Error ? error.message : 'Failed to fetch groups'
+        );
+        throw error;
+      }
+    }
+  );
+
+  const createGroup = async () => {
+    const workspaceId = selectedWorkspaceId();
+    if (!workspaceId) {
+      console.error('❌ Cannot create group: No workspace selected');
+      throw new Error('No workspace selected');
     }
 
     try {
       setIsCreating(true);
-      const newGroup = await api.mutation([
+      console.log('🔄 Creating group for workspace:', workspaceId);
+      const result = await api.mutation([
         'groups.createGroups',
-        { name, workspace_id: currentWorkspaceId },
+        {
+          name: 'New Group',
+          workspace_id: workspaceId,
+        },
       ]);
-      console.log('✅ New group created:', newGroup);
-      return newGroup;
+      console.log('✅ Group created:', result);
+      refetchGroups();
+      return result;
     } catch (error) {
       console.error('❌ Error creating group:', error);
+      setError(
+        error instanceof Error ? error.message : 'Failed to create groups'
+      );
       throw error;
     } finally {
       setIsCreating(false);
     }
   };
 
-  const updateGroup = async (
-    groupId: number,
-    name: string,
-    workspaceId: number
-  ) => {
+  const updateGroup = async (id: number, name: string, workspaceId: number) => {
     try {
       setIsUpdating(true);
-      console.log('📡 Sending update request:', {
-        id: groupId,
-        name,
-        workspace_id: workspaceId,
-      });
-
-      const updatedGroup = await api.mutation([
+      console.log('🔄 Updating group:', { id, name, workspaceId });
+      const result = await api.mutation([
         'groups.updateGroup',
-        { id: groupId, name, workspace_id: workspaceId },
+        {
+          id,
+          name,
+          workspace_id: workspaceId,
+        },
       ]);
-
-      console.log('✅ Group updated - backend response:', updatedGroup);
-      return updatedGroup;
+      console.log('✅ Group updated:', result);
+      refetchGroups();
+      return result;
     } catch (error) {
       console.error('❌ Error updating group:', error);
+      setError(
+        error instanceof Error ? error.message : 'Failed to update groups'
+      );
       throw error;
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const deleteGroup = async (groupId: number) => {
+  const deleteGroup = async (id: number) => {
     try {
-      await api.mutation(['groups.deleteGroup', groupId]);
-      console.log('✅ Group deleted:', groupId);
-      return true;
+      setIsDeleting(true);
+      console.log('🔄 Deleting group:', id);
+      const result = await api.mutation(['groups.deleteGroup', id]);
+      console.log('✅ Group deleted:', result);
+      refetchGroups();
+      return result;
     } catch (error) {
       console.error('❌ Error deleting group:', error);
+      setError(
+        error instanceof Error ? error.message : 'Failed to delete groups'
+      );
       throw error;
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  const selectWorkspace = (id: number) => {
-    console.log('🏢 Selecting workspace:', id);
-    setWorkspaceId(id);
+  const selectWorkspace = (id: number | null) => {
+    console.log('🏢 Selecting workspace for groups:', id);
+    setSelectedWorkspaceId(id);
+    // Clear selected group when switching workspace
+    setSelectedGroup(null);
+  };
+
+  const selectOrganization = (id: number | null) => {
+    console.log('🏢 Selecting organization for groups:', id);
+    setSelectedOrganizationId(id);
+    // Clear selected group when switching organization
+    setSelectedGroup(null);
   };
 
   return {
-    // State
-    workspaceId: workspaceId(),
     isCreating,
     isUpdating,
-
-    // Actions
+    isDeleting,
+    groups,
+    loading,
+    error,
+    selectedGroup,
+    setSelectedGroup,
     selectWorkspace,
+    selectOrganization,
     createGroup,
     updateGroup,
     deleteGroup,
+    refetchGroups,
   };
 }
-// import { createSignal } from 'solid-js';
-// import { api } from '../rpc';
-
-// export function useGroups() {
-//   const [workspaceId, setWorkspaceId] = createSignal<number | null>(null);
-//   const [isCreating, setIsCreating] = createSignal(false);
-//   const [isUpdating, setIsUpdating] = createSignal(false);
-
-//   const createGroup = async (name: string = 'New Group') => {
-//     const currentWorkspaceId = workspaceId();
-//     if (!currentWorkspaceId) {
-//       console.error('❌ No workspace selected');
-//       return null;
-//     }
-
-//     try {
-//       setIsCreating(true);
-//       const newGroup = await api.mutation([
-//         'groups.createGroups',
-//         { name, workspace_id: currentWorkspaceId },
-//       ]);
-//       console.log('✅ New group created:', newGroup);
-//       return newGroup;
-//     } catch (error) {
-//       console.error('❌ Error creating group:', error);
-//       throw error;
-//     } finally {
-//       setIsCreating(false);
-//     }
-//   };
-
-//   const updateGroup = async (
-//     groupId: number,
-//     name: string,
-//     workspaceId: number
-//   ) => {
-//     if (!workspaceId) {
-//       console.error('❌ No workspace selected');
-//       return null;
-//     }
-
-//     try {
-//       setIsUpdating(true);
-//       const updatedGroup = await api.mutation([
-//         'groups.updateGroup',
-//         { id: groupId, name, workspace_id: workspaceId },
-//       ]);
-//       console.log('✅ Group updated:', updatedGroup);
-//       return updatedGroup;
-//     } catch (error) {
-//       console.error('❌ Error updating group:', error);
-//       throw error;
-//     } finally {
-//       setIsUpdating(false);
-//     }
-//   };
-
-//   const deleteGroup = async (groupId: number) => {
-//     try {
-//       await api.mutation(['groups.deleteGroup', groupId]);
-//       console.log('✅ Group deleted:', groupId);
-//       return true;
-//     } catch (error) {
-//       console.error('❌ Error deleting group:', error);
-//       throw error;
-//     }
-//   };
-
-//   const selectWorkspace = (id: number) => {
-//     console.log('🏢 Selecting workspace:', id);
-//     setWorkspaceId(id);
-//   };
-
-//   return {
-//     // State
-//     workspaceId: workspaceId(),
-//     isCreating,
-//     isUpdating,
-
-//     // Actions
-//     selectWorkspace,
-//     createGroup,
-//     updateGroup,
-//     deleteGroup,
-//   };
-// }

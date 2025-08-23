@@ -39,6 +39,7 @@ pub trait GroupService: Send + Sync {
         &self,
         ctx: ContextRouter,
         workspace_id: i32,
+        organization_id: i32,
     ) -> Result<Vec<GroupsDto>, String>;
 }
 
@@ -58,10 +59,11 @@ impl GroupService for GroupsServiceImpl {
         &self,
         ctx: ContextRouter,
         workspace_id: i32,
+        organization_id: i32,
     ) -> Result<Vec<GroupsDto>, String> {
         let belonged_groups = self
             .groups_repository
-            .find_by_workspace_id(&ctx.db, workspace_id)
+            .find_belonged_groups(&ctx.db, workspace_id, organization_id)
             .await
             .map_err(|e| e.to_string())?;
 

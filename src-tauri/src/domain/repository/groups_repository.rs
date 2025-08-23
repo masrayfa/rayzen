@@ -1,8 +1,13 @@
-use entity::groups::{self, ActiveModel as GroupsActiveModel, Entity as Groups};
+use entity::{
+    groups::{self, ActiveModel as GroupsActiveModel, Entity as Groups},
+    workspace,
+};
 
 use async_trait::async_trait;
 
-use sea_orm::{ActiveValue::Set, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
+use sea_orm::{
+    ActiveValue::Set, ColumnTrait, Condition, DatabaseConnection, DbErr, EntityTrait, QueryFilter,
+};
 
 #[async_trait]
 pub trait GroupRepository: Send + Sync {
@@ -28,6 +33,12 @@ pub trait GroupRepository: Send + Sync {
         &self,
         db: &DatabaseConnection,
         workspace_id: i32,
+    ) -> Result<Vec<groups::Model>, DbErr>;
+    async fn find_belonged_groups(
+        &self,
+        db: &DatabaseConnection,
+        workspace_id: i32,
+        organization_id: i32,
     ) -> Result<Vec<groups::Model>, DbErr>;
 }
 
@@ -152,6 +163,37 @@ impl GroupRepository for GroupRepositoryImpl {
 
         let active_groups = Groups::find()
             .filter(groups::Column::WorkspaceId.eq(workspace_id))
+            .all(db)
+            .await
+            .map_err(|e| {
+                println!("❌ Query error: {}", e);
+                DbErr::Custom(e.to_string())
+            })?;
+
+        println!("✅ Active groups found: {}", active_groups.len());
+
+        Ok(active_groups)
+    }
+
+    async fn find_belonged_groups(
+        &self,
+        db: &DatabaseConnection,
+        workspace_id: i32,
+        organization_id: i32,
+    ) -> Result<Vec<groups::Model>, DbErr> {
+        println!(
+            "🔍 Searching active groups with workspace_id: {} and organization_id: {}",
+            workspace_id, organization_id,
+        );
+
+        // Query dengan join ke tabel workspaces untuk memfilter berdasarkan organization_id
+        let active_groups = Groups::find()
+            .inner_join(workspace::Entity)
+            .filter(
+                Condition::all()
+                    .add(groups::Column::WorkspaceId.eq(workspace_id))
+                    .add(workspace::Column::OrganizationId.eq(organization_id)),
+            )
             .all(db)
             .await
             .map_err(|e| {

@@ -31,11 +31,11 @@ export const SearchInput: Component<SearchInputProps> = (props) => {
       case 'Escape':
         e.preventDefault();
         if (query()) {
-          // Jika ada query, clear dulu
+          // If there is a query, clear it first
           setQuery('');
           props.onSearch('');
         } else {
-          // Jika tidak ada query, trigger back
+          // If no query, trigger back
           props.onBack?.();
         }
         break;
@@ -62,7 +62,7 @@ export const SearchInput: Component<SearchInputProps> = (props) => {
 
   return (
     <div class="relative w-full">
-      {/* Back Button - hanya tampil jika showBackButton true */}
+      {/* Back Button - only show if showBackButton true */}
       {props.showBackButton && (
         <button
           onClick={handleBackClick}

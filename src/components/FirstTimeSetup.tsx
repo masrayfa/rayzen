@@ -1,63 +1,123 @@
-import { Component, createSignal, Show } from 'solid-js';
+import {
+  Component,
+  createResource,
+  createSignal,
+  Show,
+  onMount,
+} from 'solid-js';
 import { Button } from './ui/button';
 import { FiUser, FiArrowRight } from 'solid-icons/fi';
 import { api } from '~/rpc';
+import { UserDto } from '~/types';
 
 interface FirstTimeSetupProps {
   onComplete: (userId: number, organizationId: number) => void;
+  isFirstTimeForOrg: boolean;
+  firstUser?: Pick<UserDto, 'id'>;
 }
 
 const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
   const [currentStep, setCurrentStep] = createSignal<'user' | 'organization'>(
-    'user'
+    props.isFirstTimeForOrg ? 'organization' : 'user'
   );
   const [userName, setUserName] = createSignal('');
   const [userEmail, setUserEmail] = createSignal('');
   const [organizationName, setOrganizationName] = createSignal('');
   const [isCreatingUser, setIsCreatingUser] = createSignal(false);
   const [isCreatingOrg, setIsCreatingOrg] = createSignal(false);
-  const [createdUserId, setCreatedUserId] = createSignal<number | null>(null);
+  const [createdUserId, setCreatedUserId] = createSignal<number | null>(
+    props.firstUser?.id || null
+  );
+
+  // Setup for organization-only mode
+  onMount(async () => {
+    console.log('🔄 FirstTimeSetup mounted:', {
+      isFirstTimeForOrg: props.isFirstTimeForOrg,
+      firstUser: props.firstUser,
+    });
+
+    if (props.isFirstTimeForOrg) {
+      // if there is firstUser from props, use that
+      if (props.firstUser?.id) {
+        console.log('✅ Using firstUser from props:', props.firstUser.id);
+        setCreatedUserId(props.firstUser.id);
+        return;
+      }
+
+      // if no, fetch user existing user
+      await checkExistingUser();
+    }
+  });
+
+  const checkExistingUser = async () => {
+    try {
+      console.log('🔄 Checking existing user...');
+      const users = await api.query(['users.getUsers']);
+      console.log('✅ Users found:', users);
+
+      if (users && users.length > 0) {
+        const firstUser = users[0];
+        console.log('✅ Setting user:', firstUser);
+        setCreatedUserId(firstUser.id);
+        setUserName(firstUser.name);
+        setUserEmail(firstUser.email);
+      }
+    } catch (error) {
+      console.error('❌ Error checking existing user:', error);
+    }
+  };
 
   const handleCreateUser = async () => {
-    console.log('Creating user', userName(), userEmail());
+    console.log('🔄 Creating user', userName(), userEmail());
 
     if (!userName().trim() || !userEmail().trim()) return;
 
     try {
       setIsCreatingUser(true);
-      // Replace with actual API call
       const result = await api.mutation([
         'users.createUser',
         { email: userEmail(), name: userName() },
       ]);
 
-      console.log('User created:', result);
+      console.log('✅ User created:', result);
 
       setCreatedUserId(result.id);
       setCurrentStep('organization');
     } catch (error) {
-      console.error('Failed to create user:', error);
+      console.error('❌ Failed to create user:', error);
     } finally {
       setIsCreatingUser(false);
     }
   };
 
   const handleCreateOrganization = async () => {
-    if (!organizationName().trim() || !createdUserId()) return;
+    console.log('🔄 Creating organization...', {
+      organizationName: organizationName(),
+      createdUserId: createdUserId(),
+      isFirstTimeForOrg: props.isFirstTimeForOrg,
+    });
+
+    if (!organizationName().trim()) {
+      console.error('❌ Organization name is empty');
+      return;
+    }
+
+    if (!createdUserId()) {
+      console.error('❌ No user ID found');
+      return;
+    }
 
     try {
       setIsCreatingOrg(true);
-      // Replace with actual API call
       const result = await api.mutation([
         'organization.createOrganization',
-        { name: organizationName(), user_id: createdUserId() ?? 0 },
+        { name: organizationName(), user_id: createdUserId()! },
       ]);
 
-      console.log('Organization created:', result);
-
+      console.log('✅ Organization created:', result);
       props.onComplete(createdUserId()!, result.id);
     } catch (error) {
-      console.error('Failed to create organization:', error);
+      console.error('❌ Failed to create organization:', error);
     } finally {
       setIsCreatingOrg(false);
     }
@@ -69,39 +129,45 @@ const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
         <div class="bg-gray-900/80 p-8 rounded-2xl border border-gray-700/50 shadow-2xl">
           {/* Header */}
           <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-white mb-2">Welcome!</h1>
+            <h1 class="text-3xl font-bold text-white mb-2">
+              {props.isFirstTimeForOrg ? 'Setup Organization' : 'Welcome!'}
+            </h1>
             <p class="text-gray-400">
-              Let's set up your account to get started
+              {props.isFirstTimeForOrg
+                ? 'Create your first organization to continue'
+                : "Let's set up your account to get started"}
             </p>
           </div>
 
-          {/* Progress Steps */}
-          <div class="flex items-center justify-center mb-8">
-            <div class="flex items-center space-x-4">
-              <div
-                class={`flex items-center justify-center w-8 h-8 rounded-full ${
-                  currentStep() === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-600 text-gray-300'
-                }`}
-              >
-                <FiUser size={16} />
-              </div>
-              <div class="h-px w-8 bg-gray-600"></div>
-              <div
-                class={`flex items-center justify-center w-8 h-8 rounded-full ${
-                  currentStep() === 'organization'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-600 text-gray-300'
-                }`}
-              >
-                <FiArrowRight size={16} />
+          {/* Progress Steps - Hide if only org setup */}
+          <Show when={!props.isFirstTimeForOrg}>
+            <div class="flex items-center justify-center mb-8">
+              <div class="flex items-center space-x-4">
+                <div
+                  class={`flex items-center justify-center w-8 h-8 rounded-full ${
+                    currentStep() === 'user'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-600 text-gray-300'
+                  }`}
+                >
+                  <FiUser size={16} />
+                </div>
+                <div class="h-px w-8 bg-gray-600"></div>
+                <div
+                  class={`flex items-center justify-center w-8 h-8 rounded-full ${
+                    currentStep() === 'organization'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-600 text-gray-300'
+                  }`}
+                >
+                  <FiArrowRight size={16} />
+                </div>
               </div>
             </div>
-          </div>
+          </Show>
 
           {/* Step 1: Create User */}
-          <Show when={currentStep() === 'user'}>
+          <Show when={currentStep() === 'user' && !props.isFirstTimeForOrg}>
             <div class="space-y-6">
               <div>
                 <h2 class="text-xl font-semibold text-white mb-4">
@@ -173,7 +239,9 @@ const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
           </Show>
 
           {/* Step 2: Create Organization */}
-          <Show when={currentStep() === 'organization'}>
+          <Show
+            when={currentStep() === 'organization' || props.isFirstTimeForOrg}
+          >
             <div class="space-y-6">
               <div>
                 <h2 class="text-xl font-semibold text-white mb-4">
@@ -193,7 +261,11 @@ const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
                         setOrganizationName(e.currentTarget.value)
                       }
                       onKeyPress={(e) => {
-                        if (e.key === 'Enter' && organizationName().trim()) {
+                        if (
+                          e.key === 'Enter' &&
+                          organizationName().trim() &&
+                          createdUserId()
+                        ) {
                           handleCreateOrganization();
                         }
                       }}
@@ -206,19 +278,34 @@ const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
                 </div>
               </div>
 
+              {/* Debug info */}
+              {/* <div class="text-xs text-gray-600">
+                Debug: organizationName="{organizationName()}", createdUserId=
+                {createdUserId()}, isCreatingOrg={String(isCreatingOrg())}
+              </div> */}
+
               <div class="flex gap-3">
+                {/* Hide back button if isFirstTimeForOrg */}
+                <Show when={!props.isFirstTimeForOrg}>
+                  <Button
+                    variant="ghost"
+                    class="flex-1 text-gray-400 hover:text-white border border-gray-600 hover:border-gray-500"
+                    onclick={() => setCurrentStep('user')}
+                    disabled={isCreatingOrg()}
+                  >
+                    Back
+                  </Button>
+                </Show>
                 <Button
-                  variant="ghost"
-                  class="flex-1 text-gray-400 hover:text-white border border-gray-600 hover:border-gray-500"
-                  onclick={() => setCurrentStep('user')}
-                  disabled={isCreatingOrg()}
-                >
-                  Back
-                </Button>
-                <Button
-                  class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3"
+                  class={`${
+                    props.isFirstTimeForOrg ? 'w-full' : 'flex-1'
+                  } bg-blue-600 hover:bg-blue-700 text-white py-3`}
                   onclick={handleCreateOrganization}
-                  disabled={isCreatingOrg() || !organizationName().trim()}
+                  disabled={
+                    isCreatingOrg() ||
+                    !organizationName().trim() ||
+                    !createdUserId()
+                  }
                 >
                   {isCreatingOrg() ? (
                     'Setting up...'

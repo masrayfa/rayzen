@@ -47,7 +47,7 @@ export function SelectOptions(props: SelectOptionsProps) {
         setValue(selectedOption.name);
       }
     } else if (props.options.length > 0 && props.selectedId === null) {
-      // Auto-select first option jika tidak ada selectedId
+      // Auto-select first option if selectedId doesnt exist
       const firstOption = props.options[0];
       setValue(firstOption.name);
       props.onSelect?.(firstOption.id);

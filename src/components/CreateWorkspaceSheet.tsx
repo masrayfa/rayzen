@@ -14,6 +14,7 @@ import { FiPlus } from 'solid-icons/fi';
 
 interface CreateWorkspaceSheetProps {
   onSubmit: (name: string, organizationId: number) => void;
+  triggerPlaceholder?: string;
 }
 
 const CreateWorkspaceSheet = (props: CreateWorkspaceSheetProps) => {
@@ -59,6 +60,7 @@ const CreateWorkspaceSheet = (props: CreateWorkspaceSheetProps) => {
       <Sheet open={isOpen()} onOpenChange={setIsOpen}>
         <SheetTrigger>
           <Button class="bg-blue-500/20 text-white rounded-l-none">
+            {props.triggerPlaceholder ? props.triggerPlaceholder : null}
             <FiPlus />
           </Button>
         </SheetTrigger>

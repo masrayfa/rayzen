@@ -5,6 +5,7 @@ use domain::router;
 use dotenvy;
 use std::sync::Arc;
 
+use migration;
 use rspc_tauri;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

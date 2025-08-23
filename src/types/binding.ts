@@ -7,7 +7,7 @@ export type Procedures = {
         { key: "bookmark.getById", input: number, result: BookmarkDto } | 
         { key: "bookmark.list", input: never, result: BookmarkDto[] } | 
         { key: "bookmark.search", input: string, result: BookmarkDto[] } | 
-        { key: "groups.getBelongedGroups", input: number, result: GroupsDto[] } | 
+        { key: "groups.getBelongedGroups", input: [number, number], result: GroupsDto[] } | 
         { key: "groups.getGroupById", input: number, result: GroupsDto } | 
         { key: "groups.getGroups", input: never, result: GroupsDto[] } | 
         { key: "organization.getOrganizationById", input: number, result: OrganizationDto } | 

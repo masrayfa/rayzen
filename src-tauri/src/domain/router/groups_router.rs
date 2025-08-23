@@ -33,11 +33,11 @@ pub fn create_groups_router() -> RouterBuilder<ContextRouter> {
             })
         })
         .query("getBelongedGroups", |t| {
-            t.resolver(|ctx: ContextRouter, workspace_id: i32| async move {
+            t.resolver(|ctx: ContextRouter, input: (i32, i32)| async move {
                 let repo = Arc::new(GroupRepositoryImpl::new());
                 let service = GroupsServiceImpl::new(repo);
                 service
-                    .list_belonged_groups(ctx, workspace_id)
+                    .list_belonged_groups(ctx, input.0, input.1)
                     .await
                     .map_err(|e| rspc::Error::new(ErrorCode::InternalServerError, e))
             })

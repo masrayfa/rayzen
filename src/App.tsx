@@ -6,7 +6,7 @@ import {
   onMount,
   createEffect,
 } from 'solid-js';
-import { GroupsDto, SearchResult } from './types';
+import { GroupsDto, SearchResult, UserDto } from './types';
 import { api } from './rpc';
 import SearchResults from './components/SearchResult';
 import { SearchInput } from './components/SearchInput';
@@ -27,18 +27,13 @@ import FirstTimeSetup from './components/FirstTimeSetup';
 
 const App: Component = () => {
   const [isFirstTime, setIsFirstTime] = createSignal<boolean | null>(null);
+  const [isFirstTimeForOrg, setIsFirstTimeForOrg] = createSignal<boolean>(true);
   const [currentUser, setCurrentUser] = createSignal<{
     id: number;
     name: string;
     email: string;
   } | null>(null);
 
-  const [selectedGroup, setSelectedGroup] = createSignal<GroupsDto | null>(
-    null
-  );
-  // const [selectedWorkspaceId, setSelectedWorkspaceId] = createSignal<
-  //   number | null
-  // >(null);
   const [results, setResults] = createSignal<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [viewMode, setViewMode] = createSignal<
@@ -53,13 +48,21 @@ const App: Component = () => {
     selectGroup,
   } = useGroupBookmarks();
 
+  // Updated: Use the enhanced useGroups hook
   const {
-    createGroup: createGroups,
-    updateGroup: updateGroups,
-    selectWorkspace: selectWorkspaceForGroups,
+    groups,
+    loading: groupsLoading,
+    error: groupsError,
+    selectedGroup,
+    setSelectedGroup,
+    createGroup,
+    updateGroup,
     deleteGroup,
+    selectWorkspace: selectWorkspaceForGroups,
+    selectOrganization: selectOrganizationForGroups,
     isCreating,
     isUpdating,
+    refetchGroups,
   } = useGroups();
 
   const {
@@ -105,15 +108,28 @@ const App: Component = () => {
     console.log('🔄 Organization changed:', orgId);
 
     if (orgId) {
-      // Set organization ID for workspace hook
+      // 1. Set organization ID for workspace hook
       setSelectedOrgIdForWorkspace(orgId);
 
-      // Reset selected workspace and groups when organization changes
+      // 2. Set organization ID for groups hook
+      selectOrganizationForGroups(orgId);
+
+      // 3. 🔥 CRITICAL: Reset selected workspace when organization changes
+      console.log('🔄 Resetting workspace selection due to org change');
       setSelectedWorkspaceId(null);
+
+      // 4. Reset selected group and clear bookmarks
       setSelectedGroup(null);
       clearSelection();
 
-      // Refetch workspaces for new organization
+      // 5. 🔥 CRITICAL: Clear groups immediately untuk organization baru
+      console.log('🔄 Clearing groups for organization change');
+      // Groups akan ter-trigger untuk re-fetch dengan workspace null,
+      // yang akan menghasilkan empty groups
+
+      selectWorkspaceForGroups(null);
+
+      // 6. Refetch workspaces for new organization
       refetchWorkspaces();
     }
   });
@@ -143,65 +159,80 @@ const App: Component = () => {
     }
   });
 
-  const [groups, { refetch: refetchGroups }] = createResource(
-    () => ({
-      workspaceId: selectedWorkspaceId(),
-      organizationId: selectedOrganizationId(),
-    }),
-    async (deps) => {
-      const { workspaceId, organizationId } = deps;
+  // Effect for sync workspace selection to groups hook
+  createEffect(() => {
+    const workspaceId = selectedWorkspaceId();
+    const orgId = selectedOrganizationId();
 
-      if (!organizationId || !workspaceId) {
-        console.log(
-          '🔄 No organization or workspace selected, returning empty groups'
-        );
-        return [];
-      }
+    console.log('🔄 Syncing workspace to groups hook:', { workspaceId, orgId });
 
-      console.log(
-        '🔄 Fetching groups for workspace:',
-        workspaceId,
-        'in org:',
-        organizationId
-      );
-
-      try {
-        return await api.query(['groups.getBelongedGroups', workspaceId]);
-      } catch (error) {
-        console.error('❌ Error fetching groups:', error);
-        return [];
-      }
+    // Always sync workspace to groups, even if null
+    // when workspaceId null, groups hook will return empty groups
+    if (orgId) {
+      // Only sync if we have organization
+      selectWorkspaceForGroups(workspaceId);
     }
-  );
+  });
 
   // Check if there are existing users in the database on app load
-  const [userCheck] = createResource(async () => {
+  const [_] = createResource(async () => {
     try {
       console.log('🔄 Checking for existing users...');
       const users = await api.query(['users.getUsers']);
 
-      if (users && users.length > 0) {
-        console.log('✅ Found existing users:', users.length);
-        const firstUser = users[0];
-        setCurrentUser({
-          id: firstUser.id,
-          name: firstUser.name,
-          email: firstUser.email,
-        });
-
-        // Set user ID to trigger organizations fetch
-        setSelectedUserIdForOrg(firstUser.id);
-
-        setIsFirstTime(false);
-        return { hasUsers: true, user: firstUser };
-      } else {
+      if (!users || users.length === 0) {
         console.log('ℹ️ No users found, showing first-time setup');
         setIsFirstTime(true);
+        setIsFirstTimeForOrg(true);
         return { hasUsers: false, user: null };
       }
+
+      // Take first user since it only allows to have 1 user atm
+      const firstUser = users[0];
+      console.log('✅ Found existing users:', users.length);
+
+      setCurrentUser({
+        id: firstUser.id,
+        name: firstUser.name,
+        email: firstUser.email,
+      });
+
+      const userOrganizations = await api.query([
+        'organization.getOrganizationByUserId',
+        firstUser.id,
+      ]);
+
+      const hasOrganizations =
+        userOrganizations && userOrganizations.length > 0;
+
+      if (!hasOrganizations) {
+        console.log('❌ User has no organization, need to create one');
+        // user exists but need to create organization
+        setIsFirstTime(false); // User already created before
+        setIsFirstTimeForOrg(true); // continue to set up organization for first time
+
+        return {
+          hasUsers: true,
+          hasOrg: false,
+          user: firstUser,
+        };
+      }
+
+      // User exists and has organization
+      console.log('✅ User has organizations:', userOrganizations.length);
+      setSelectedUserIdForOrg(firstUser.id);
+      setIsFirstTime(false);
+      setIsFirstTimeForOrg(false);
+
+      return {
+        hasUsers: true,
+        hasOrg: true,
+        user: firstUser,
+      };
     } catch (error) {
       console.error('❌ Error checking users:', error);
       setIsFirstTime(true);
+      setIsFirstTimeForOrg(true);
       return { hasUsers: false, user: null };
     }
   });
@@ -228,11 +259,14 @@ const App: Component = () => {
         setCurrentUser({ id: userId, name: '', email: '' });
       });
 
-    setSelectedUserIdForOrg(userId);
     setIsFirstTime(false);
+    setIsFirstTimeForOrg(false);
 
-    // Auto select the created organization
+    setSelectedUserIdForOrg(userId);
+
     selectOrganization(organizationId);
+
+    console.log('✅ First time setup handler finished');
   };
 
   const handleSearch = async (query: string) => {
@@ -316,13 +350,8 @@ const App: Component = () => {
   const handleRenameGroup = async ({ id, name }: GroupsDto) => {
     try {
       console.log('🔄 Renaming group:', id, name);
-      const result = await updateGroups(id, name, selectedWorkspaceId() || 0);
-      console.log('✅ Update result from backend:', result);
-
-      setTimeout(() => {
-        console.log('🔄 Refetching groups...');
-        refetchGroups();
-      }, 100);
+      await updateGroup(id, name, selectedWorkspaceId() || 0);
+      console.log('✅ Group renamed successfully');
     } catch (error) {
       console.error('❌ Error renaming group:', error);
     }
@@ -332,7 +361,7 @@ const App: Component = () => {
     try {
       await deleteGroup(id);
       setSelectedGroup(null);
-      refetchGroups();
+      console.log('✅ Group deleted successfully');
     } catch (error) {
       console.error('❌ Error deleting group:', error);
     }
@@ -340,9 +369,8 @@ const App: Component = () => {
 
   const handleCreateGroup = async () => {
     try {
-      selectWorkspaceForGroups(selectedWorkspaceId() || 0);
-      await createGroups();
-      refetchGroups();
+      await createGroup();
+      console.log('✅ Group created successfully');
     } catch (error) {
       console.error('❌ Error creating group:', error);
     }
@@ -419,8 +447,6 @@ const App: Component = () => {
           setSelectedWorkspaceId(null);
         }
       }
-
-      refetchGroups();
     } catch (error) {
       console.error('❌ Error deleting workspace:', error);
     }
@@ -432,19 +458,19 @@ const App: Component = () => {
     // Cleanup logic berdasarkan mode yang akan dibuka
     switch (newMode) {
       case 'settings':
-        // Tutup group bookmarks jika sedang aktif
+        // Close group bookmarks
         setSelectedGroup(null);
         clearSelection();
         break;
 
       case 'groups':
-        // Tutup search results jika ada
+        // clsoe search results if any
         setResults([]);
         setSelectedIndex(0);
         break;
 
       case 'search':
-        // Tutup group bookmarks jika sedang aktif
+        // clsoe group bookmarks
         setSelectedGroup(null);
         clearSelection();
         break;
@@ -453,15 +479,18 @@ const App: Component = () => {
     setViewMode(newMode);
   };
 
-  onMount(() => {
-    console.log('🔄 App mounted, checking for first-time setup...');
-    userCheck();
-  });
-
   return (
     <Show
-      when={!isFirstTime()}
-      fallback={<FirstTimeSetup onComplete={handleFirstTimeSetupComplete} />}
+      when={!isFirstTime() && !isFirstTimeForOrg()}
+      fallback={
+        <FirstTimeSetup
+          onComplete={handleFirstTimeSetupComplete}
+          isFirstTimeForOrg={isFirstTimeForOrg()}
+          firstUser={{
+            id: currentUser()?.id ?? 1,
+          }}
+        />
+      }
     >
       <div class="h-screen bg-black flex flex-col overflow-hidden">
         {/* Header Section - Fixed */}
@@ -476,23 +505,33 @@ const App: Component = () => {
             {/**
              * Workspace Selector
              */}
-            <SelectOptions
-              placeholder={
-                workspaces.loading
-                  ? 'Loading workspaces...'
-                  : 'Select Workspace'
+            <Show
+              when={workspaces() && workspaces()!.length > 0}
+              fallback={
+                <CreateWorkspaceSheet
+                  onSubmit={handleCreateWorkspace}
+                  triggerPlaceholder="init workspace"
+                />
               }
-              options={
-                workspaces()?.map((ws) => ({
-                  name: ws.name,
-                  id: ws.id,
-                })) || []
-              }
-              onSelect={handleWorkspaceSelect}
-              selectedId={selectedWorkspaceId() ?? 0}
-              class="mr-2"
-            />
-            <CreateWorkspaceSheet onSubmit={handleCreateWorkspace} />
+            >
+              <SelectOptions
+                placeholder={
+                  workspaces.loading
+                    ? 'Loading workspaces...'
+                    : 'Select Workspace'
+                }
+                options={
+                  workspaces()?.map((ws) => ({
+                    name: ws.name,
+                    id: ws.id,
+                  })) || []
+                }
+                onSelect={handleWorkspaceSelect}
+                selectedId={selectedWorkspaceId() ?? 0}
+                class="mr-2"
+              />
+              <CreateWorkspaceSheet onSubmit={handleCreateWorkspace} />
+            </Show>
           </div>
         </div>
 
@@ -518,8 +557,8 @@ const App: Component = () => {
               <div class="flex flex-col">
                 <ListOfGroups
                   groups={groups()}
-                  loading={groups.loading}
-                  error={groups.error}
+                  loading={groupsLoading()}
+                  error={groupsError()}
                   onGroupSelect={handleGroupSelect}
                   selectedGroupId={selectedGroup()?.id || 0}
                   onRenameGroup={handleRenameGroup}
@@ -531,20 +570,6 @@ const App: Component = () => {
 
           {/* Main Content Area - Scrollable */}
           <div class="flex-1 p-3 overflow-y-auto">
-            {/* deprecated create bookmark sheet */}
-            {/* <Show when={selectedWorkspaceId()}>
-              <CreateBookmarkSheet
-                onSubmit={handleCreateBookmark}
-                options={
-                  groups()?.map((group) => ({
-                    id: group.id,
-                    name: group.name,
-                  })) ?? []
-                }
-                selectedGroupId={selectedGroup()?.id}
-              />
-            </Show> */}
-
             {/* Search Results Section */}
             <Show when={viewMode() === 'search'}>
               <SearchResults
@@ -558,7 +583,7 @@ const App: Component = () => {
             {/* Group Bookmarks Section */}
             <Show when={selectedGroup()}>
               <div class="space-y-4">
-                {/* Create Bookmark Button - di dalam group view */}
+                {/* Create Bookmark Button */}
                 <div class="flex justify-between items-center">
                   <h2 class="text-xl font-semibold text-white">
                     {selectedGroup()?.name} Bookmarks
@@ -593,10 +618,9 @@ const App: Component = () => {
                   onWorkspaceSelect={handleWorkspaceSelect}
                   onDeleteWorkspace={handleDeleteWorkspace}
                   onClose={() => setViewMode('groups')}
-                  // Tambah organization handlers
+                  // Organization handlers
                   onCreateOrganization={async (name: string) => {
                     try {
-                      // Assuming user ID is always 1
                       const userId = currentUser()?.id || 1;
                       return await api.mutation([
                         'organization.createOrganization',
@@ -631,7 +655,7 @@ const App: Component = () => {
                     }
                   }}
                   onSelectOrganization={selectOrganization}
-                  isCreatingOrg={false} // Anda bisa menambahkan loading state jika diperlukan
+                  isCreatingOrg={false}
                   isUpdatingOrg={false}
                   isDeletingOrg={false}
                 />
