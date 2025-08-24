@@ -2,6 +2,7 @@ import { createSignal, For, Show, onCleanup, onMount } from 'solid-js';
 import { Card, CardContent } from './ui/card';
 import { FiFolder, FiLoader, FiCheck, FiX } from 'solid-icons/fi';
 import { GroupsDto as Group, GroupsDto } from '../types';
+import NoGroupsFound from './NoGroupsFound';
 
 interface ListOfGroupsProps {
   groups?: Group[];
@@ -121,15 +122,7 @@ const ListOfGroups = (props: ListOfGroupsProps) => {
       <Show when={!props.loading && !props.error && props.groups}>
         <Show
           when={props.groups && props.groups.length > 0}
-          fallback={
-            <div class="text-center py-13">
-              <FiFolder class="mx-auto mb-5 text-4xl text-gray-600" />
-              <div class="text-gray-500 text-lg mb-2">No groups found</div>
-              <div class="text-gray-600 text-sm">
-                Create your first group to organize your bookmarks
-              </div>
-            </div>
-          }
+          fallback={<NoGroupsFound />}
         >
           <div class="flex flex-col space-y-4 p-2">
             <For each={props.groups}>

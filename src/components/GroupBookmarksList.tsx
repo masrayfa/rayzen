@@ -1,12 +1,6 @@
 import { Component, Show, For } from 'solid-js';
 import { SearchResult, GroupsDto } from '../types';
-import {
-  FiBookmark,
-  FiStar,
-  FiExternalLink,
-  FiX,
-  FiLoader,
-} from 'solid-icons/fi';
+import { FiBookmark, FiStar, FiX, FiLoader, FiCopy } from 'solid-icons/fi';
 import { toast } from 'solid-sonner';
 
 interface GroupBookmarksListProps {
@@ -110,7 +104,7 @@ const GroupBookmarksList: Component<GroupBookmarksListProps> = (props) => {
                         )}
                     </div>
 
-                    <FiExternalLink class="text-gray-400 group-hover:text-red-400 flex-shrink-0 ml-2 transition-colors" />
+                    <FiCopy class="text-gray-400 group-hover:text-red-400 flex-shrink-0 ml-2 transition-colors" />
                   </div>
                 </div>
               )}

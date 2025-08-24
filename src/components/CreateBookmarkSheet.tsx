@@ -112,6 +112,11 @@ const CreateBookmarkSheet = (props: CreateBookmarkSheetProps) => {
                 class="col-span-3"
                 type="url"
                 onInput={(e) => setLink(e.currentTarget.value)}
+                onkeypress={(e) => {
+                  if (e.key === 'Enter' && selectedGroupId() && link().trim()) {
+                    handleSubmit();
+                  }
+                }}
               />
             </TextField>
 
@@ -133,6 +138,7 @@ const CreateBookmarkSheet = (props: CreateBookmarkSheetProps) => {
           <SheetFooter>
             <Button
               type="button"
+              class="cursor-pointer"
               onClick={handleButtonClick}
               disabled={!selectedGroupId()}
             >

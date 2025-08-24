@@ -24,6 +24,7 @@ import CreateWorkspaceSheet from './components/CreateWorkspaceSheet';
 import { useOrganization } from './hooks/useOrganization';
 import Settings from './components/Settings';
 import FirstTimeSetup from './components/FirstTimeSetup';
+import NoGroupsFound from './components/NoGroupsFound';
 
 const App: Component = () => {
   const [isFirstTime, setIsFirstTime] = createSignal<boolean | null>(null);
@@ -44,6 +45,7 @@ const App: Component = () => {
 
   const {
     bookmarks: groupBookmarksList,
+    createBookmark,
     clearSelection,
     error: bookmarksError,
     loading: bookmarksLoading,
@@ -86,6 +88,9 @@ const App: Component = () => {
     selectedOrganizationId,
     setSelectedUserId: setSelectedUserIdForOrg,
     organizations,
+    deleteOrganization,
+    updateOrganization,
+    createOrganization,
   } = useOrganization();
 
   // Auto-select first organization when organizations are loaded
@@ -263,7 +268,7 @@ const App: Component = () => {
         setCurrentUser({ id: userId, name: '', email: '' });
       });
 
-    //     setIsFirstTime(false);
+    setIsFirstTime(false);
     setIsFirstTimeForOrg(false);
 
     setSelectedUserIdForOrg(userId);
@@ -397,16 +402,23 @@ const App: Component = () => {
         return;
       }
 
-      const result = await api.mutation([
-        'bookmark.create',
-        {
-          name,
-          url,
-          group_id: selectedGroupId || 0,
-          is_favorite: false,
-          tags: '',
-        },
-      ]);
+      const result = await createBookmark(
+        name,
+        url,
+        selectedGroupId || 0,
+        false,
+        ''
+      );
+      // const result = await api.mutation([
+      //   'bookmark.create',
+      //   {
+      //     name,
+      //     url,
+      //     group_id: selectedGroupId || 0,
+      //     is_favorite: false,
+      //     tags: '',
+      //   },
+      // ]);
 
       console.log('✅ Bookmark created:', result);
 
@@ -491,13 +503,20 @@ const App: Component = () => {
     setViewMode(newMode);
   };
 
-  const handleCreateOrganization = async (name: string) => {
+  const handleCreateOrganization = async (
+    name: string,
+    createdUserId?: number
+  ): Promise<number> => {
+    if (!createdUserId) {
+      console.error('created user id is not found');
+    }
+
     try {
-      const userId = currentUser()?.id || 1;
-      return await api.mutation([
-        'organization.createOrganization',
-        { name, user_id: userId },
-      ]);
+      const userId = currentUser()?.id ?? createdUserId;
+
+      const result = await createOrganization(userId!, name);
+
+      return result.id;
     } catch (error) {
       console.error('Failed to create organization:', error);
       throw error;
@@ -507,10 +526,7 @@ const App: Component = () => {
   const handleUpdateOrganization = async (id: number, name: string) => {
     try {
       const userId = currentUser()?.id || 1;
-      return await api.mutation([
-        'organization.updateOrganization',
-        { id, name, user_id: userId },
-      ]);
+      await updateOrganization(id, userId, name);
     } catch (error) {
       console.error('Failed to update organization:', error);
       throw error;
@@ -519,7 +535,17 @@ const App: Component = () => {
 
   const handleDeleteOrganization = async (id: number) => {
     try {
-      return await api.mutation(['organization.deleteOrganization', id]);
+      await deleteOrganization(id);
+      if (selectedOrganizationId() === id) {
+        const remainingOrganizations = organizations()?.filter(
+          (org) => org.id !== id
+        );
+        if (remainingOrganizations && remainingOrganizations.length > 0) {
+          selectOrganization(remainingOrganizations[0].id);
+        } else {
+          selectOrganization(null);
+        }
+      }
     } catch (error) {
       console.error('Failed to delete organization:', error);
       throw error;
@@ -537,6 +563,7 @@ const App: Component = () => {
               onComplete={handleFirstTimeSetupComplete}
               isFirstTimeForOrg={isFirstTimeForOrg()}
               firstUserId={currentUser()?.id}
+              onCreateOrganization={handleCreateOrganization}
             />
           }
         >
@@ -594,10 +621,20 @@ const App: Component = () => {
                       variant={'ghost'}
                       class="text-white/80 hover:bg-gray-500/10 hover:text-white w-full justify-start cursor-pointer"
                       onclick={handleCreateGroup}
-                      disabled={isCreating() || isUpdating()}
+                      disabled={
+                        isCreating() || isUpdating() || !workspaces()?.length
+                      }
                     >
-                      <FiPlus />
-                      {isCreating() ? ' Creating...' : 'New Group'}
+                      {isCreating() ? (
+                        ' Creating...'
+                      ) : groups() ? (
+                        <>
+                          <FiPlus />
+                          New Group
+                        </>
+                      ) : (
+                        'No groups found'
+                      )}
                     </Button>
                   </div>
 
@@ -649,7 +686,7 @@ const App: Component = () => {
                     </div>
                     <GroupBookmarksList
                       group={selectedGroup()}
-                      bookmarks={groupBookmarksList()}
+                      bookmarks={groupBookmarksList() || []}
                       loading={bookmarksLoading}
                       error={bookmarksError}
                       onClose={handleCloseGroupBookmarks}

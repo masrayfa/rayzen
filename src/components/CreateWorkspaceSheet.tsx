@@ -64,9 +64,12 @@ const CreateWorkspaceSheet = (props: CreateWorkspaceSheetProps) => {
             <FiPlus />
           </Button>
         </SheetTrigger>
-        <SheetContent position="right">
+        <SheetContent
+          position="right"
+          class="bg-[#141414] border-none text-white"
+        >
           <SheetHeader>
-            <SheetTitle>New Workspace</SheetTitle>
+            <SheetTitle class="text-white">New Workspace</SheetTitle>
             <SheetDescription>
               Create a new workspace to organize your bookmarks and groups.
             </SheetDescription>
@@ -78,9 +81,14 @@ const CreateWorkspaceSheet = (props: CreateWorkspaceSheetProps) => {
               <TextFieldInput
                 value={name()}
                 placeholder="Personal Projects"
-                class="col-span-3"
+                class="col-span-3 "
                 type="text"
                 onInput={(e) => setName(e.currentTarget.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && name().trim()) {
+                    handleSubmit();
+                  }
+                }}
               />
             </TextField>
           </div>

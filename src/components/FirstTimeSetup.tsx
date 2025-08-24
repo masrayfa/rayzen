@@ -12,12 +12,15 @@ import { UserDto } from '~/types';
 
 interface FirstTimeSetupProps {
   onComplete: (userId: number, organizationId: number) => void;
+  onCreateOrganization: (
+    name: string,
+    createdUserId?: number
+  ) => Promise<number>;
   isFirstTimeForOrg: boolean | null;
   firstUserId?: number | null | undefined;
 }
 
 const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
-  // ✅ Fix: Tentukan step berdasarkan apakah sudah ada firstUserId
   const [currentStep, setCurrentStep] = createSignal<'user' | 'organization'>(
     props.firstUserId ? 'organization' : 'user'
   );
@@ -39,15 +42,13 @@ const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
       currentStep: currentStep(),
     });
 
-    // ✅ Fix: Jika ada firstUserId dari props, langsung gunakan
     if (props.firstUserId) {
       console.log('✅ Using firstUser from props:', props.firstUserId);
       setCreatedUserId(props.firstUserId);
-      setCurrentStep('organization'); // ✅ Force ke organization step
+      setCurrentStep('organization');
       return;
     }
 
-    // ✅ Fix: Jika isFirstTimeForOrg = true tapi tidak ada firstUserId, cari existing user
     if (props.isFirstTimeForOrg) {
       await checkExistingUser();
     }
@@ -65,7 +66,7 @@ const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
         setCreatedUserId(firstUser.id);
         setUserName(firstUser.name);
         setUserEmail(firstUser.email);
-        setCurrentStep('organization'); // ✅ Move to org step jika user ditemukan
+        setCurrentStep('organization');
       }
     } catch (error) {
       console.error('❌ Error checking existing user:', error);
@@ -114,13 +115,17 @@ const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
 
     try {
       setIsCreatingOrg(true);
-      const result = await api.mutation([
-        'organization.createOrganization',
-        { name: organizationName(), user_id: createdUserId()! },
-      ]);
+      const id = await props.onCreateOrganization(
+        organizationName(),
+        createdUserId()!
+      );
+      // const result = await api.mutation([
+      //   'organization.createOrganization',
+      //   { name: organizationName(), user_id: createdUserId()! },
+      // ]);
 
-      console.log('✅ Organization created:', result);
-      props.onComplete(createdUserId()!, result.id);
+      console.log('✅ Organization created:', id);
+      props.onComplete(createdUserId()!, id);
     } catch (error) {
       console.error('❌ Failed to create organization:', error);
     } finally {
@@ -290,7 +295,6 @@ const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
               </div>
 
               <div class="flex gap-3">
-                {/* ✅ Fix: Show back button untuk kembali ke user step jika bukan org-only mode */}
                 <Show when={!props.isFirstTimeForOrg}>
                   <Button
                     variant="ghost"
@@ -305,7 +309,7 @@ const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
                   class={`${
                     props.isFirstTimeForOrg ? 'w-full' : 'flex-1'
                   } bg-blue-600 hover:bg-blue-700 text-white py-3`}
-                  onclick={handleCreateOrganization}
+                  onclick={() => handleCreateOrganization()}
                   disabled={
                     isCreatingOrg() ||
                     !organizationName().trim() ||

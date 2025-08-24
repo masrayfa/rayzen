@@ -9,46 +9,61 @@ export function useGroupBookmarks() {
   const [workspaceId, setWorkspaceId] = createSignal<number | null>(null);
 
   // Resource untuk fetch bookmarks berdasarkan group yang dipilih
-  const [groupBookmarks] = createResource(selectedGroupId, async (groupId) => {
-    if (groupId === null) return [];
+  const [bookmarks, { refetch }] = createResource(
+    selectedGroupId,
+    async (groupId) => {
+      if (groupId === null) return [];
 
-    console.log('🔍 Fetching bookmarks for group:', groupId);
-    try {
-      // Sesuaikan dengan API endpoint
-      const bookmarks = await api.query(['bookmark.getByGroup', groupId]);
-      console.log('✅ Group bookmarks fetched:', bookmarks.length);
+      console.log('🔍 Fetching bookmarks for group:', groupId);
+      try {
+        // Sesuaikan dengan API endpoint
+        const bookmarks = await api.query(['bookmark.getByGroup', groupId]);
+        console.log('✅ Group bookmarks fetched:', bookmarks.length);
 
-      // Transform ke format SearchResult untuk consistency
-      return bookmarks.map(
-        (bookmark: any): SearchResult => ({
-          id: bookmark.id,
-          title: bookmark.name || bookmark.title || 'Untitled',
-          tags: Array.isArray(bookmark.tags) ? bookmark.tags : [],
-          is_favorite: Boolean(bookmark.is_favorite),
-          url: bookmark.url || '',
-          type: 'bookmark',
-        })
-      );
-    } catch (error) {
-      console.error('❌ Error fetching group bookmarks:', error);
-      throw error;
+        // Transform ke format SearchResult untuk consistency
+        return bookmarks.map(
+          (bookmark: any): SearchResult => ({
+            id: bookmark.id,
+            title: bookmark.name || bookmark.title || 'Untitled',
+            tags: Array.isArray(bookmark.tags) ? bookmark.tags : [],
+            is_favorite: Boolean(bookmark.is_favorite),
+            url: bookmark.url || '',
+            type: 'bookmark',
+          })
+        );
+      } catch (error) {
+        console.error('❌ Error fetching group bookmarks:', error);
+        throw error;
+      }
     }
-  });
+  );
 
-  const [createGroups] = createResource(workspaceId, async (id) => {
+  const createBookmark = async (
+    name: string,
+    url: string,
+    groupId: number,
+    isFavorite: boolean,
+    tags: string
+  ) => {
     try {
-      const groups = await api.mutation([
-        'groups.createGroups',
-        { name: 'New Group', workspace_id: id },
+      const result = await api.mutation([
+        'bookmark.create',
+        {
+          name,
+          url,
+          group_id: groupId || 0,
+          is_favorite: isFavorite,
+          tags,
+        },
       ]);
+      console.log('Created bookmark successfully', result);
 
-      console.log('✅ New group created:', groups);
-      return groups;
+      refetch();
     } catch (error) {
-      console.error('❌ Error creating group:', error);
+      console.error('❌ Error creating group bookmarks:', error);
       throw error;
     }
-  });
+  };
 
   const selectGroup = (groupId: number) => {
     console.log('📂 Selecting group:', groupId);
@@ -71,15 +86,14 @@ export function useGroupBookmarks() {
 
   return {
     selectedGroupId,
-    groupBookmarks,
+    bookmarks,
     selectGroup,
     clearSelection,
     isGroupSelected,
-    loading: groupBookmarks.loading,
-    error: groupBookmarks.error,
-    bookmarks: () => groupBookmarks() || [],
-    hasBookmarks: () => (groupBookmarks() || []).length > 0,
-    create: () => createGroups(),
+    loading: bookmarks.loading,
+    error: bookmarks.error,
+    hasBookmarks: () => (bookmarks || []).length > 0,
+    createBookmark,
     selectWorkspace,
   };
 }

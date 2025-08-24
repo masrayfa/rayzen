@@ -129,7 +129,7 @@ export function useOrganization() {
     }
   };
 
-  const selectOrganization = (id: number) => {
+  const selectOrganization = (id: number | null) => {
     console.log('🏢 Selecting organization:', id);
     console.log('Previous selectedOrganizationId:', selectedOrganizationId());
     setSelectedOrganizationId(id);
