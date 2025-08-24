@@ -106,14 +106,10 @@ impl OrganizationService for OrganizationServiceImpl {
             return Err("Organization ID is required for update".to_string());
         }
         let id = dto.id.unwrap();
-        let found_organization = self
-            .organization_repository
-            .get_organization_by_id(&ctx.db, id)
-            .await
-            .map_err(|e| e.to_string())?;
+
         let updated_organization = self
             .organization_repository
-            .update_organization(&ctx.db, id, found_organization.into())
+            .update_organization(&ctx.db, id, dto.into())
             .await
             .map_err(|e| e.to_string())?;
         Ok(updated_organization.into())

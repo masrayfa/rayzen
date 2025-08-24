@@ -85,9 +85,6 @@ impl WorkspaceRepository for WorkspaceRepositoryImpl {
             ..existing_workspace_active_model
         };
 
-        // 2nd Version
-        // let updated_bookmark: BookmarkModel =
-        //     BookmarkActiveModel::update(updated_bookmark, db).await?;
         let updated_workspace: WorkspaceModel =
             Workspace::update(updated_workspace).exec(db).await?;
 

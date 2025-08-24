@@ -354,8 +354,8 @@ const App: Component = () => {
   const handleRenameGroup = async ({ id, name }: GroupsDto) => {
     try {
       console.log('🔄 Renaming group:', id, name);
-      //       await updateGroup(id, name, selectedWorkspaceId() || 0);
-      //      console.log('✅ Group renamed successfully');
+      await updateGroup(id, name, selectedWorkspaceId() || 0);
+      console.log('✅ Group renamed successfully');
     } catch (error) {
       console.error('❌ Error renaming group:', error);
     }
@@ -439,6 +439,14 @@ const App: Component = () => {
     }
   };
 
+  const handleUpdateWorkspace = async (id: number, name: string) => {
+    try {
+      await updateWorkspace(id, name, selectedOrganizationId() ?? 0);
+    } catch (error) {
+      console.error('❌ Error deleting workspace:', error);
+    }
+  };
+
   const handleDeleteWorkspace = async (id: number) => {
     try {
       await deleteWorkspace(id);
@@ -481,6 +489,41 @@ const App: Component = () => {
     }
 
     setViewMode(newMode);
+  };
+
+  const handleCreateOrganization = async (name: string) => {
+    try {
+      const userId = currentUser()?.id || 1;
+      return await api.mutation([
+        'organization.createOrganization',
+        { name, user_id: userId },
+      ]);
+    } catch (error) {
+      console.error('Failed to create organization:', error);
+      throw error;
+    }
+  };
+
+  const handleUpdateOrganization = async (id: number, name: string) => {
+    try {
+      const userId = currentUser()?.id || 1;
+      return await api.mutation([
+        'organization.updateOrganization',
+        { id, name, user_id: userId },
+      ]);
+    } catch (error) {
+      console.error('Failed to update organization:', error);
+      throw error;
+    }
+  };
+
+  const handleDeleteOrganization = async (id: number) => {
+    try {
+      return await api.mutation(['organization.deleteOrganization', id]);
+    } catch (error) {
+      console.error('Failed to delete organization:', error);
+      throw error;
+    }
   };
 
   return (
@@ -623,61 +666,20 @@ const App: Component = () => {
                       organizations={organizations() ?? []}
                       organizationId={selectedOrganizationId() || 0}
                       selectedWorkspaceId={selectedWorkspaceId}
+                      // Workspace handlers
                       onWorkspaceSelect={handleWorkspaceSelect}
+                      onUpdateWorkspace={handleUpdateWorkspace}
                       onDeleteWorkspace={handleDeleteWorkspace}
                       onClose={() => setViewMode('groups')}
                       // Organization handlers
-                      onCreateOrganization={async (name: string) => {
-                        try {
-                          const userId = currentUser()?.id || 1;
-                          return await api.mutation([
-                            'organization.createOrganization',
-                            { name, user_id: userId },
-                          ]);
-                        } catch (error) {
-                          console.error(
-                            'Failed to create organization:',
-                            error
-                          );
-                          throw error;
-                        }
-                      }}
-                      onUpdateOrganization={async (
-                        id: number,
-                        name: string
-                      ) => {
-                        try {
-                          const userId = currentUser()?.id || 1;
-                          return await api.mutation([
-                            'organization.updateOrganization',
-                            { id, name, user_id: userId },
-                          ]);
-                        } catch (error) {
-                          console.error(
-                            'Failed to update organization:',
-                            error
-                          );
-                          throw error;
-                        }
-                      }}
-                      onDeleteOrganization={async (id: number) => {
-                        try {
-                          return await api.mutation([
-                            'organization.deleteOrganization',
-                            id,
-                          ]);
-                        } catch (error) {
-                          console.error(
-                            'Failed to delete organization:',
-                            error
-                          );
-                          throw error;
-                        }
-                      }}
+                      onCreateOrganization={handleCreateOrganization}
+                      onUpdateOrganization={handleUpdateOrganization}
+                      onDeleteOrganization={handleDeleteOrganization}
                       onSelectOrganization={selectOrganization}
                       isCreatingOrg={false}
                       isUpdatingOrg={false}
                       isDeletingOrg={false}
+                      // Workspace handlers
                     />
                   </div>
                 </Show>

@@ -13,6 +13,7 @@ import { WorkspaceDto } from '~/types';
 interface SettingsProps {
   selectedWorkspaceId: () => number | null;
   onWorkspaceSelect: (id: number) => void;
+  onUpdateWorkspace: (id: number, name: string) => void;
   onDeleteWorkspace: (id: number) => void;
   onClose: () => void;
   workspaces: WorkspaceDto[];
@@ -42,12 +43,15 @@ const Settings: Component<SettingsProps> = (props) => {
   const [editingOrgId, setEditingOrgId] = createSignal<number | null>(null);
 
   const handleUpdateWorkspace = async (id: number) => {
-    if (!editWorkspaceName().trim()) return;
+    const updatedWorkspaceName = editWorkspaceName().trim();
+
+    if (!updatedWorkspaceName) return;
 
     try {
-      console.log('Update workspace:', id, editWorkspaceName().trim());
+      console.log('Update workspace:', id, updatedWorkspaceName);
       setEditingWorkspaceId(null);
       setEditWorkspaceName('');
+      props.onUpdateWorkspace(id, updatedWorkspaceName);
     } catch (error) {
       console.error('Failed to update workspace:', error);
     }

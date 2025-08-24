@@ -43,3 +43,13 @@ impl UpdateWorkspaceDto {
         model
     }
 }
+
+impl From<UpdateWorkspaceDto> for workspace::ActiveModel {
+    fn from(dto: UpdateWorkspaceDto) -> Self {
+        let model = workspace::ActiveModel {
+            id: Set(dto.id.unwrap_or(0)),
+            ..Default::default()
+        };
+        dto.apply_to_model(model)
+    }
+}

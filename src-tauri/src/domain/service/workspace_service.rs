@@ -86,15 +86,9 @@ impl WorkspaceService for WorkspaceServiceImpl {
 
         let id = dto.id.unwrap();
 
-        let existing_workspace = self
-            .workspace_repository
-            .get_workspace_by_id(&ctx.db, id)
-            .await
-            .map_err(|e| e.to_string())?;
-
         let updated_workspace = self
             .workspace_repository
-            .update_workspace(&ctx.db, id, existing_workspace.into())
+            .update_workspace(&ctx.db, id, dto.into())
             .await
             .map_err(|e| e.to_string())?;
 

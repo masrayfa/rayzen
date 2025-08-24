@@ -43,3 +43,13 @@ impl UpdateOrganizationDto {
         model
     }
 }
+
+impl From<UpdateOrganizationDto> for organization::ActiveModel {
+    fn from(dto: UpdateOrganizationDto) -> Self {
+        let model = organization::ActiveModel {
+            id: Set(dto.id.unwrap_or(0)),
+            ..Default::default()
+        };
+        dto.apply_to_model(model)
+    }
+}

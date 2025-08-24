@@ -101,18 +101,20 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
             .one(db)
             .await?
             .ok_or(DbErr::RecordNotFound("Organization not found".to_string()))?;
+
         let organization_active_model: OrganizationActiveModel = existing_organization.into();
-        let updated_organization = Organization::update(organization_active_model)
+
+        let updated_organization = OrganizationActiveModel {
+            name: input.name,
+            ..organization_active_model
+        };
+
+        let updated_organization = Organization::update(updated_organization)
             .exec(db)
             .await
             .map_err(|e| DbErr::Custom(e.to_string()))?;
-        let organization_model = Organization::find_by_id(updated_organization.id)
-            .one(db)
-            .await?
-            .ok_or(DbErr::RecordNotFound(
-                "Updated organization not found".to_string(),
-            ))?;
-        Ok(organization_model)
+
+        Ok(updated_organization)
     }
 
     async fn delete_organization(&self, db: &DatabaseConnection, id: i32) -> Result<(), DbErr> {
