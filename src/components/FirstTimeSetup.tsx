@@ -12,39 +12,43 @@ import { UserDto } from '~/types';
 
 interface FirstTimeSetupProps {
   onComplete: (userId: number, organizationId: number) => void;
-  isFirstTimeForOrg: boolean;
-  firstUser?: Pick<UserDto, 'id'>;
+  isFirstTimeForOrg: boolean | null;
+  firstUserId?: number | null | undefined;
 }
 
 const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
+  // ✅ Fix: Tentukan step berdasarkan apakah sudah ada firstUserId
   const [currentStep, setCurrentStep] = createSignal<'user' | 'organization'>(
-    props.isFirstTimeForOrg ? 'organization' : 'user'
+    props.firstUserId ? 'organization' : 'user'
   );
+
   const [userName, setUserName] = createSignal('');
   const [userEmail, setUserEmail] = createSignal('');
   const [organizationName, setOrganizationName] = createSignal('');
   const [isCreatingUser, setIsCreatingUser] = createSignal(false);
   const [isCreatingOrg, setIsCreatingOrg] = createSignal(false);
   const [createdUserId, setCreatedUserId] = createSignal<number | null>(
-    props.firstUser?.id || null
+    props.firstUserId || null
   );
 
   // Setup for organization-only mode
   onMount(async () => {
     console.log('🔄 FirstTimeSetup mounted:', {
       isFirstTimeForOrg: props.isFirstTimeForOrg,
-      firstUser: props.firstUser,
+      firstUser: props.firstUserId ?? null,
+      currentStep: currentStep(),
     });
 
-    if (props.isFirstTimeForOrg) {
-      // if there is firstUser from props, use that
-      if (props.firstUser?.id) {
-        console.log('✅ Using firstUser from props:', props.firstUser.id);
-        setCreatedUserId(props.firstUser.id);
-        return;
-      }
+    // ✅ Fix: Jika ada firstUserId dari props, langsung gunakan
+    if (props.firstUserId) {
+      console.log('✅ Using firstUser from props:', props.firstUserId);
+      setCreatedUserId(props.firstUserId);
+      setCurrentStep('organization'); // ✅ Force ke organization step
+      return;
+    }
 
-      // if no, fetch user existing user
+    // ✅ Fix: Jika isFirstTimeForOrg = true tapi tidak ada firstUserId, cari existing user
+    if (props.isFirstTimeForOrg) {
       await checkExistingUser();
     }
   });
@@ -61,6 +65,7 @@ const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
         setCreatedUserId(firstUser.id);
         setUserName(firstUser.name);
         setUserEmail(firstUser.email);
+        setCurrentStep('organization'); // ✅ Move to org step jika user ditemukan
       }
     } catch (error) {
       console.error('❌ Error checking existing user:', error);
@@ -130,17 +135,19 @@ const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
           {/* Header */}
           <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-white mb-2">
-              {props.isFirstTimeForOrg ? 'Setup Organization' : 'Welcome!'}
+              {currentStep() === 'organization'
+                ? 'Setup Organization'
+                : 'Welcome!'}
             </h1>
             <p class="text-gray-400">
-              {props.isFirstTimeForOrg
+              {currentStep() === 'organization'
                 ? 'Create your first organization to continue'
                 : "Let's set up your account to get started"}
             </p>
           </div>
 
           {/* Progress Steps - Hide if only org setup */}
-          <Show when={!props.isFirstTimeForOrg}>
+          <Show when={currentStep() === 'user' || !props.isFirstTimeForOrg}>
             <div class="flex items-center justify-center mb-8">
               <div class="flex items-center space-x-4">
                 <div
@@ -166,8 +173,8 @@ const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
             </div>
           </Show>
 
-          {/* Step 1: Create User */}
-          <Show when={currentStep() === 'user' && !props.isFirstTimeForOrg}>
+          {/* Step 1: Create User - Only show if no existing user */}
+          <Show when={currentStep() === 'user' && !createdUserId()}>
             <div class="space-y-6">
               <div>
                 <h2 class="text-xl font-semibold text-white mb-4">
@@ -238,10 +245,8 @@ const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
             </div>
           </Show>
 
-          {/* Step 2: Create Organization */}
-          <Show
-            when={currentStep() === 'organization' || props.isFirstTimeForOrg}
-          >
+          {/* Step 2: Create Organization - Only show if user exists */}
+          <Show when={currentStep() === 'organization' && createdUserId()}>
             <div class="space-y-6">
               <div>
                 <h2 class="text-xl font-semibold text-white mb-4">
@@ -278,14 +283,14 @@ const FirstTimeSetup: Component<FirstTimeSetupProps> = (props) => {
                 </div>
               </div>
 
-              {/* Debug info */}
-              {/* <div class="text-xs text-gray-600">
-                Debug: organizationName="{organizationName()}", createdUserId=
-                {createdUserId()}, isCreatingOrg={String(isCreatingOrg())}
-              </div> */}
+              {/* Debug info - Show current state */}
+              <div class="text-xs text-gray-600">
+                Debug: step="{currentStep()}", userId={createdUserId()},
+                isFirstTimeForOrg={String(props.isFirstTimeForOrg)}
+              </div>
 
               <div class="flex gap-3">
-                {/* Hide back button if isFirstTimeForOrg */}
+                {/* ✅ Fix: Show back button untuk kembali ke user step jika bukan org-only mode */}
                 <Show when={!props.isFirstTimeForOrg}>
                   <Button
                     variant="ghost"

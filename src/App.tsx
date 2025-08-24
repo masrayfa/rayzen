@@ -27,7 +27,9 @@ import FirstTimeSetup from './components/FirstTimeSetup';
 
 const App: Component = () => {
   const [isFirstTime, setIsFirstTime] = createSignal<boolean | null>(null);
-  const [isFirstTimeForOrg, setIsFirstTimeForOrg] = createSignal<boolean>(true);
+  const [isFirstTimeForOrg, setIsFirstTimeForOrg] = createSignal<
+    boolean | null
+  >(null);
   const [currentUser, setCurrentUser] = createSignal<{
     id: number;
     name: string;
@@ -175,7 +177,7 @@ const App: Component = () => {
   });
 
   // Check if there are existing users in the database on app load
-  const [_] = createResource(async () => {
+  const [initializationData] = createResource(async () => {
     try {
       console.log('🔄 Checking for existing users...');
       const users = await api.query(['users.getUsers']);
@@ -183,7 +185,8 @@ const App: Component = () => {
       if (!users || users.length === 0) {
         console.log('ℹ️ No users found, showing first-time setup');
         setIsFirstTime(true);
-        setIsFirstTimeForOrg(true);
+        setIsFirstTimeForOrg(null); // ✅ Set null, bukan true
+        setCurrentUser(null); // ✅ Explicitly set null
         return { hasUsers: false, user: null };
       }
 
@@ -197,6 +200,8 @@ const App: Component = () => {
         email: firstUser.email,
       });
 
+      console.log('@app::createReesource::checking user-data: ', currentUser());
+
       const userOrganizations = await api.query([
         'organization.getOrganizationByUserId',
         firstUser.id,
@@ -207,10 +212,8 @@ const App: Component = () => {
 
       if (!hasOrganizations) {
         console.log('❌ User has no organization, need to create one');
-        // user exists but need to create organization
-        setIsFirstTime(false); // User already created before
-        setIsFirstTimeForOrg(true); // continue to set up organization for first time
-
+        setIsFirstTime(false); // User already exists
+        setIsFirstTimeForOrg(true); // But need org setup
         return {
           hasUsers: true,
           hasOrg: false,
@@ -218,7 +221,7 @@ const App: Component = () => {
         };
       }
 
-      // User exists and has organization
+      // User exists and has organization - normal flow
       console.log('✅ User has organizations:', userOrganizations.length);
       setSelectedUserIdForOrg(firstUser.id);
       setIsFirstTime(false);
@@ -232,7 +235,8 @@ const App: Component = () => {
     } catch (error) {
       console.error('❌ Error checking users:', error);
       setIsFirstTime(true);
-      setIsFirstTimeForOrg(true);
+      setIsFirstTimeForOrg(null); // ✅ Set null for true first time
+      setCurrentUser(null);
       return { hasUsers: false, user: null };
     }
   });
@@ -259,7 +263,7 @@ const App: Component = () => {
         setCurrentUser({ id: userId, name: '', email: '' });
       });
 
-    setIsFirstTime(false);
+    //     setIsFirstTime(false);
     setIsFirstTimeForOrg(false);
 
     setSelectedUserIdForOrg(userId);
@@ -350,8 +354,8 @@ const App: Component = () => {
   const handleRenameGroup = async ({ id, name }: GroupsDto) => {
     try {
       console.log('🔄 Renaming group:', id, name);
-      await updateGroup(id, name, selectedWorkspaceId() || 0);
-      console.log('✅ Group renamed successfully');
+      //       await updateGroup(id, name, selectedWorkspaceId() || 0);
+      //      console.log('✅ Group renamed successfully');
     } catch (error) {
       console.error('❌ Error renaming group:', error);
     }
@@ -481,204 +485,227 @@ const App: Component = () => {
 
   return (
     <Show
-      when={!isFirstTime() && !isFirstTimeForOrg()}
+      when={initializationData.loading}
       fallback={
-        <FirstTimeSetup
-          onComplete={handleFirstTimeSetupComplete}
-          isFirstTimeForOrg={isFirstTimeForOrg()}
-          firstUser={{
-            id: currentUser()?.id ?? 1,
-          }}
-        />
-      }
-    >
-      <div class="h-screen bg-black flex flex-col overflow-hidden">
-        {/* Header Section - Fixed */}
-        <div>
-          <SearchInput
-            onSearch={handleSearch}
-            onNavigate={handleNavigate}
-            onEnter={handleEnter}
-          />
-
-          <div class="flex absolute right-20 top-0 mt-2">
-            {/**
-             * Workspace Selector
-             */}
-            <Show
-              when={workspaces() && workspaces()!.length > 0}
-              fallback={
-                <CreateWorkspaceSheet
-                  onSubmit={handleCreateWorkspace}
-                  triggerPlaceholder="init workspace"
-                />
-              }
-            >
-              <SelectOptions
-                placeholder={
-                  workspaces.loading
-                    ? 'Loading workspaces...'
-                    : 'Select Workspace'
-                }
-                options={
-                  workspaces()?.map((ws) => ({
-                    name: ws.name,
-                    id: ws.id,
-                  })) || []
-                }
-                onSelect={handleWorkspaceSelect}
-                selectedId={selectedWorkspaceId() ?? 0}
-                class="mr-2"
-              />
-              <CreateWorkspaceSheet onSubmit={handleCreateWorkspace} />
-            </Show>
-          </div>
-        </div>
-
-        {/* Main Content - Flexible */}
-        <div class="flex flex-1 min-h-0">
-          {/* Sidebar - Fixed width, no scroll */}
-          <div class="px-8 py-8 bg-gray-500/10 flex flex-col min-h-0 h-full">
+        <Show
+          when={isFirstTime() === false && isFirstTimeForOrg() === false}
+          fallback={
+            <FirstTimeSetup
+              onComplete={handleFirstTimeSetupComplete}
+              isFirstTimeForOrg={isFirstTimeForOrg()}
+              firstUserId={currentUser()?.id}
+            />
+          }
+        >
+          <div class="h-screen bg-black flex flex-col overflow-hidden">
+            {/* Header Section - Fixed */}
             <div>
-              {/* New group button */}
-              <div class="pb-5 px-2 shrink-0">
-                <Button
-                  variant={'ghost'}
-                  class="text-white/80 hover:bg-gray-500/10 hover:text-white w-full justify-start cursor-pointer"
-                  onclick={handleCreateGroup}
-                  disabled={isCreating() || isUpdating()}
-                >
-                  <FiPlus />
-                  {isCreating() ? ' Creating...' : 'New Group'}
-                </Button>
-              </div>
+              <SearchInput
+                onSearch={handleSearch}
+                onNavigate={handleNavigate}
+                onEnter={handleEnter}
+              />
 
-              {/* Groups Section */}
-              <div class="flex flex-col">
-                <ListOfGroups
-                  groups={groups()}
-                  loading={groupsLoading()}
-                  error={groupsError()}
-                  onGroupSelect={handleGroupSelect}
-                  selectedGroupId={selectedGroup()?.id || 0}
-                  onRenameGroup={handleRenameGroup}
-                  onDeleteGroup={handleDeleteGroup}
-                />
+              <div class="flex absolute right-20 top-0 mt-2">
+                {/**
+                 * Workspace Selector
+                 */}
+                <Show
+                  when={workspaces() && workspaces()!.length > 0}
+                  fallback={
+                    <CreateWorkspaceSheet
+                      onSubmit={handleCreateWorkspace}
+                      triggerPlaceholder="init workspace"
+                    />
+                  }
+                >
+                  <SelectOptions
+                    placeholder={
+                      workspaces.loading
+                        ? 'Loading workspaces...'
+                        : 'Select Workspace'
+                    }
+                    options={
+                      workspaces()?.map((ws) => ({
+                        name: ws.name,
+                        id: ws.id,
+                      })) || []
+                    }
+                    onSelect={handleWorkspaceSelect}
+                    selectedId={selectedWorkspaceId() ?? 0}
+                    class="mr-2"
+                  />
+                  <CreateWorkspaceSheet onSubmit={handleCreateWorkspace} />
+                </Show>
               </div>
             </div>
-          </div>
 
-          {/* Main Content Area - Scrollable */}
-          <div class="flex-1 p-3 overflow-y-auto">
-            {/* Search Results Section */}
-            <Show when={viewMode() === 'search'}>
-              <SearchResults
-                results={results()}
-                selectedIndex={selectedIndex()}
-                onSelectionChange={setSelectedIndex}
-                onSelectItem={handleBookmarkSelect}
-              />
-            </Show>
+            {/* Main Content - Flexible */}
+            <div class="flex flex-1 min-h-0">
+              {/* Sidebar - Fixed width, no scroll */}
+              <div class="px-8 py-8 bg-gray-500/10 flex flex-col min-h-0 h-full">
+                <div>
+                  {/* New group button */}
+                  <div class="pb-5 px-2 shrink-0">
+                    <Button
+                      variant={'ghost'}
+                      class="text-white/80 hover:bg-gray-500/10 hover:text-white w-full justify-start cursor-pointer"
+                      onclick={handleCreateGroup}
+                      disabled={isCreating() || isUpdating()}
+                    >
+                      <FiPlus />
+                      {isCreating() ? ' Creating...' : 'New Group'}
+                    </Button>
+                  </div>
 
-            {/* Group Bookmarks Section */}
-            <Show when={selectedGroup()}>
-              <div class="space-y-4">
-                {/* Create Bookmark Button */}
-                <div class="flex justify-between items-center">
-                  <h2 class="text-xl font-semibold text-white">
-                    {selectedGroup()?.name} Bookmarks
-                  </h2>
-                  <CreateBookmarkSheet
-                    onSubmit={handleCreateBookmark}
-                    options={[
-                      { id: selectedGroup()!.id, name: selectedGroup()!.name },
-                    ]}
-                    selectedGroupId={selectedGroup()?.id}
-                  />
+                  {/* Groups Section */}
+                  <div class="flex flex-col">
+                    <ListOfGroups
+                      groups={groups()}
+                      loading={groupsLoading}
+                      error={groupsError()}
+                      onGroupSelect={handleGroupSelect}
+                      selectedGroupId={selectedGroup()?.id || 0}
+                      onRenameGroup={handleRenameGroup}
+                      onDeleteGroup={handleDeleteGroup}
+                    />
+                  </div>
                 </div>
-                <GroupBookmarksList
-                  group={selectedGroup()}
-                  bookmarks={groupBookmarksList()}
-                  loading={bookmarksLoading}
-                  error={bookmarksError}
-                  onClose={handleCloseGroupBookmarks}
-                  onBookmarkSelect={handleBookmarkSelect}
-                />
               </div>
-            </Show>
 
-            {/* Settings Section */}
-            <Show when={viewMode() === 'settings'}>
-              <div class="text-white">
-                <Settings
-                  workspaces={workspaces() ?? []}
-                  organizations={organizations() ?? []}
-                  organizationId={selectedOrganizationId() || 0}
-                  selectedWorkspaceId={selectedWorkspaceId}
-                  onWorkspaceSelect={handleWorkspaceSelect}
-                  onDeleteWorkspace={handleDeleteWorkspace}
-                  onClose={() => setViewMode('groups')}
-                  // Organization handlers
-                  onCreateOrganization={async (name: string) => {
-                    try {
-                      const userId = currentUser()?.id || 1;
-                      return await api.mutation([
-                        'organization.createOrganization',
-                        { name, user_id: userId },
-                      ]);
-                    } catch (error) {
-                      console.error('Failed to create organization:', error);
-                      throw error;
-                    }
-                  }}
-                  onUpdateOrganization={async (id: number, name: string) => {
-                    try {
-                      const userId = currentUser()?.id || 1;
-                      return await api.mutation([
-                        'organization.updateOrganization',
-                        { id, name, user_id: userId },
-                      ]);
-                    } catch (error) {
-                      console.error('Failed to update organization:', error);
-                      throw error;
-                    }
-                  }}
-                  onDeleteOrganization={async (id: number) => {
-                    try {
-                      return await api.mutation([
-                        'organization.deleteOrganization',
-                        id,
-                      ]);
-                    } catch (error) {
-                      console.error('Failed to delete organization:', error);
-                      throw error;
-                    }
-                  }}
-                  onSelectOrganization={selectOrganization}
-                  isCreatingOrg={false}
-                  isUpdatingOrg={false}
-                  isDeletingOrg={false}
-                />
+              {/* Main Content Area - Scrollable */}
+              <div class="flex-1 p-3 overflow-y-auto">
+                {/* Search Results Section */}
+                <Show when={viewMode() === 'search'}>
+                  <SearchResults
+                    results={results()}
+                    selectedIndex={selectedIndex()}
+                    onSelectionChange={setSelectedIndex}
+                    onSelectItem={handleBookmarkSelect}
+                  />
+                </Show>
+
+                {/* Group Bookmarks Section */}
+                <Show when={selectedGroup()}>
+                  <div class="space-y-4">
+                    {/* Create Bookmark Button */}
+                    <div class="flex justify-between items-center">
+                      <h2 class="text-xl font-semibold text-white">
+                        {selectedGroup()?.name} Bookmarks
+                      </h2>
+                      <CreateBookmarkSheet
+                        onSubmit={handleCreateBookmark}
+                        options={[
+                          {
+                            id: selectedGroup()!.id,
+                            name: selectedGroup()!.name,
+                          },
+                        ]}
+                        selectedGroupId={selectedGroup()?.id}
+                      />
+                    </div>
+                    <GroupBookmarksList
+                      group={selectedGroup()}
+                      bookmarks={groupBookmarksList()}
+                      loading={bookmarksLoading}
+                      error={bookmarksError}
+                      onClose={handleCloseGroupBookmarks}
+                      onBookmarkSelect={handleBookmarkSelect}
+                    />
+                  </div>
+                </Show>
+
+                {/* Settings Section */}
+                <Show when={viewMode() === 'settings'}>
+                  <div class="text-white">
+                    <Settings
+                      workspaces={workspaces() ?? []}
+                      organizations={organizations() ?? []}
+                      organizationId={selectedOrganizationId() || 0}
+                      selectedWorkspaceId={selectedWorkspaceId}
+                      onWorkspaceSelect={handleWorkspaceSelect}
+                      onDeleteWorkspace={handleDeleteWorkspace}
+                      onClose={() => setViewMode('groups')}
+                      // Organization handlers
+                      onCreateOrganization={async (name: string) => {
+                        try {
+                          const userId = currentUser()?.id || 1;
+                          return await api.mutation([
+                            'organization.createOrganization',
+                            { name, user_id: userId },
+                          ]);
+                        } catch (error) {
+                          console.error(
+                            'Failed to create organization:',
+                            error
+                          );
+                          throw error;
+                        }
+                      }}
+                      onUpdateOrganization={async (
+                        id: number,
+                        name: string
+                      ) => {
+                        try {
+                          const userId = currentUser()?.id || 1;
+                          return await api.mutation([
+                            'organization.updateOrganization',
+                            { id, name, user_id: userId },
+                          ]);
+                        } catch (error) {
+                          console.error(
+                            'Failed to update organization:',
+                            error
+                          );
+                          throw error;
+                        }
+                      }}
+                      onDeleteOrganization={async (id: number) => {
+                        try {
+                          return await api.mutation([
+                            'organization.deleteOrganization',
+                            id,
+                          ]);
+                        } catch (error) {
+                          console.error(
+                            'Failed to delete organization:',
+                            error
+                          );
+                          throw error;
+                        }
+                      }}
+                      onSelectOrganization={selectOrganization}
+                      isCreatingOrg={false}
+                      isUpdatingOrg={false}
+                      isDeletingOrg={false}
+                    />
+                  </div>
+                </Show>
               </div>
-            </Show>
+            </div>
+
+            {/* Footer - Fixed */}
+            <div class="fixed bottom-4 right-4 text-xs text-gray-500">
+              <Button
+                class="fixed bottom-10 right-4 cursor-pointer"
+                onclick={() => {
+                  const newMode =
+                    viewMode() === 'settings' ? 'groups' : 'settings';
+                  handleViewModeChange(newMode);
+                }}
+              >
+                <FiSettings />
+              </Button>
+              <div>↑↓ Navigate • Enter Open • Esc Clear</div>
+            </div>
+
+            <Toaster theme="dark" />
           </div>
-        </div>
-
-        {/* Footer - Fixed */}
-        <div class="fixed bottom-4 right-4 text-xs text-gray-500">
-          <Button
-            class="fixed bottom-10 right-4 cursor-pointer"
-            onclick={() => {
-              const newMode = viewMode() === 'settings' ? 'groups' : 'settings';
-              handleViewModeChange(newMode);
-            }}
-          >
-            <FiSettings />
-          </Button>
-          <div>↑↓ Navigate • Enter Open • Esc Clear</div>
-        </div>
-
-        <Toaster theme="dark" />
+        </Show>
+      }
+    >
+      <div class="h-screen bg-black flex items-center justify-center">
+        <div class="text-white text-lg">Loading...</div>
       </div>
     </Show>
   );

@@ -15,17 +15,26 @@ export function useGroups() {
   const [isCreating, setIsCreating] = createSignal(false);
   const [isUpdating, setIsUpdating] = createSignal(false);
   const [isDeleting, setIsDeleting] = createSignal(false);
-  const [loading, setLoading] = createSignal(false);
+  // const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
 
   // Updated groups resource to handle null workspace
   const [groups, { refetch: refetchGroups }] = createResource(
-    () => ({
-      workspaceId: selectedWorkspaceId(),
-      organizationId: selectedOrganizationId(),
-    }),
+    () => {
+      const workspaceId = selectedWorkspaceId();
+      const organizationId = selectedOrganizationId();
+
+      if (!workspaceId || !organizationId) {
+        return false;
+      }
+
+      return {
+        workspaceId,
+        organizationId,
+      };
+    },
     async ({ workspaceId, organizationId }) => {
-      setLoading(true);
+      // setLoading(true);
       setError(null);
       // If no workspace selected, return empty array
       if (!workspaceId || !organizationId) {
@@ -42,7 +51,7 @@ export function useGroups() {
           [workspaceId, organizationId],
         ]);
         console.log('✅ Groups fetched:', groups);
-        setLoading(false);
+        // setLoading(false);
         return groups;
       } catch (error) {
         console.error('❌ Error getting groups:', error);
@@ -149,7 +158,7 @@ export function useGroups() {
     isUpdating,
     isDeleting,
     groups,
-    loading,
+    loading: groups.loading,
     error,
     selectedGroup,
     setSelectedGroup,
