@@ -1,5 +1,5 @@
 import { Component, Show, For } from 'solid-js';
-import { SearchResult, GroupsDto } from '../types';
+import { SearchResult, GroupsDto, BookmarkDto } from '../types';
 import { FiBookmark, FiStar, FiX, FiLoader, FiCopy } from 'solid-icons/fi';
 import { toast } from 'solid-sonner';
 
@@ -10,6 +10,7 @@ interface GroupBookmarksListProps {
   error: any;
   onClose: () => void;
   onBookmarkSelect: (bookmark: SearchResult) => void;
+  onUpdateBookmark: (bookmark: BookmarkDto) => void;
 }
 
 const GroupBookmarksList: Component<GroupBookmarksListProps> = (props) => {
@@ -105,6 +106,7 @@ const GroupBookmarksList: Component<GroupBookmarksListProps> = (props) => {
                     </div>
 
                     <FiCopy class="text-gray-400 group-hover:text-red-400 flex-shrink-0 ml-2 transition-colors" />
+                    {/* <BsThreeDots class="text-gray-400 group-hover:text-red-400 flex-shrink-0 ml-2 transition-colors" /> */}
                   </div>
                 </div>
               )}

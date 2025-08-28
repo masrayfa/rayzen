@@ -6,7 +6,7 @@ import {
   onMount,
   createEffect,
 } from 'solid-js';
-import { GroupsDto, SearchResult, UserDto } from './types';
+import { BookmarkDto, GroupsDto, SearchResult, UserDto } from './types';
 import { api } from './rpc';
 import SearchResults from './components/SearchResult';
 import { SearchInput } from './components/SearchInput';
@@ -25,6 +25,7 @@ import { useOrganization } from './hooks/useOrganization';
 import Settings from './components/Settings';
 import FirstTimeSetup from './components/FirstTimeSetup';
 import NoGroupsFound from './components/NoGroupsFound';
+import { BookmarkContextMenu } from './components/BookmarkContextMenu';
 
 const App: Component = () => {
   const [isFirstTime, setIsFirstTime] = createSignal<boolean | null>(null);
@@ -121,7 +122,7 @@ const App: Component = () => {
       // 2. Set organization ID for groups hook
       selectOrganizationForGroups(orgId);
 
-      // 3. 🔥 CRITICAL: Reset selected workspace when organization changes
+      // 3. Reset selected workspace when organization changes
       console.log('🔄 Resetting workspace selection due to org change');
       setSelectedWorkspaceId(null);
 
@@ -129,10 +130,10 @@ const App: Component = () => {
       setSelectedGroup(null);
       clearSelection();
 
-      // 5. 🔥 CRITICAL: Clear groups immediately untuk organization baru
+      // 5. Clear groups immediately for organization baru
       console.log('🔄 Clearing groups for organization change');
-      // Groups akan ter-trigger untuk re-fetch dengan workspace null,
-      // yang akan menghasilkan empty groups
+      // Groups will be triggered for re-fetch with workspace null,
+      // which will resulted an empty groups
 
       selectWorkspaceForGroups(null);
 
@@ -336,6 +337,10 @@ const App: Component = () => {
     if (viewMode() === 'settings') {
       handleViewModeChange('groups');
     }
+
+    if (viewMode() === 'search') {
+      setResults([]);
+    }
   };
 
   const handleCloseGroupBookmarks = () => {
@@ -350,10 +355,16 @@ const App: Component = () => {
     }
   };
 
+  const handleUpdateBookmark = (bookmark: BookmarkDto) => {};
+
   const handleWorkspaceSelect = (id: number) => {
     console.log('🏢 Selecting workspace:', id);
     setSelectedWorkspaceId(id);
     setSelectedGroup(null);
+
+    if (viewMode() === 'search') {
+      setResults([]);
+    }
   };
 
   const handleRenameGroup = async ({ id, name }: GroupsDto) => {
@@ -409,16 +420,6 @@ const App: Component = () => {
         false,
         ''
       );
-      // const result = await api.mutation([
-      //   'bookmark.create',
-      //   {
-      //     name,
-      //     url,
-      //     group_id: selectedGroupId || 0,
-      //     is_favorite: false,
-      //     tags: '',
-      //   },
-      // ]);
 
       console.log('✅ Bookmark created:', result);
 
@@ -684,14 +685,17 @@ const App: Component = () => {
                         selectedGroupId={selectedGroup()?.id}
                       />
                     </div>
-                    <GroupBookmarksList
-                      group={selectedGroup()}
-                      bookmarks={groupBookmarksList() || []}
-                      loading={bookmarksLoading}
-                      error={bookmarksError}
-                      onClose={handleCloseGroupBookmarks}
-                      onBookmarkSelect={handleBookmarkSelect}
-                    />
+                    <BookmarkContextMenu>
+                      <GroupBookmarksList
+                        group={selectedGroup()}
+                        bookmarks={groupBookmarksList() || []}
+                        loading={bookmarksLoading}
+                        error={bookmarksError}
+                        onClose={handleCloseGroupBookmarks}
+                        onBookmarkSelect={handleBookmarkSelect}
+                        onUpdateBookmark={handleUpdateBookmark}
+                      />
+                    </BookmarkContextMenu>
                   </div>
                 </Show>
 
