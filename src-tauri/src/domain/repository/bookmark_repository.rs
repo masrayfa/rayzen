@@ -4,7 +4,9 @@ use entity::bookmark::{
 };
 
 // Import SeaORM entities and DTOs
-use sea_orm::{prelude::Expr, Condition, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
+use sea_orm::{
+    prelude::Expr, ActiveValue::Set, Condition, DatabaseConnection, DbErr, EntityTrait, QueryFilter,
+};
 
 #[async_trait]
 pub trait BookmarkRepository: Send + Sync {
@@ -117,20 +119,36 @@ impl BookmarkRepository for BookmarkRepositoryImpl {
     ) -> Result<bookmark::Model, DbErr> {
         let found_bookmark = Bookmark::find_by_id(id).one(db).await?;
 
-        let found_bookmark_active_model: BookmarkActiveModel = found_bookmark.unwrap().into();
+        let mut found_bookmark_active_model: BookmarkActiveModel = found_bookmark.unwrap().into();
 
-        let updated_bookmark = BookmarkActiveModel {
-            name: bookmark.name,
-            is_favorite: bookmark.is_favorite,
-            tags: bookmark.tags,
-            url: bookmark.url,
-            ..found_bookmark_active_model
-        };
+        if let Set(name) = bookmark.name {
+            if !name.is_empty() {
+                found_bookmark_active_model.name = Set(name);
+            }
+        }
 
-        // 2nd Version
-        // let updated_bookmark: BookmarkModel =
-        //     BookmarkActiveModel::update(updated_bookmark, db).await?;
-        let updated_bookmark: BookmarkModel = Bookmark::update(updated_bookmark).exec(db).await?;
+        if let Set(is_favorite) = bookmark.is_favorite {
+            found_bookmark_active_model.is_favorite = Set(is_favorite);
+        }
+        if let Set(tags) = bookmark.tags {
+            if !tags.is_empty() {
+                found_bookmark_active_model.tags = Set(tags);
+            }
+        }
+        if let Set(url) = bookmark.url {
+            if !url.is_empty() {
+                found_bookmark_active_model.url = Set(url);
+            }
+        }
+
+        println!(
+            "@BookmarkRepository::update-data: {:?}",
+            found_bookmark_active_model.clone()
+        );
+
+        let updated_bookmark: BookmarkModel = Bookmark::update(found_bookmark_active_model)
+            .exec(db)
+            .await?;
 
         println!("Bookmarkupdated: {:?}", updated_bookmark);
         Ok(updated_bookmark)

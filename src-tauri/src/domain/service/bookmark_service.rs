@@ -114,7 +114,7 @@ impl BookmarkService for BookmarkServiceImpl {
 
         let id = dto.id.unwrap();
 
-        let found_bookmark = self
+        let _found_bookmark = self
             .bookmark_repository
             .find_by_id(&ctx.db, id)
             .await
@@ -123,7 +123,7 @@ impl BookmarkService for BookmarkServiceImpl {
 
         let updated_bookmark = self
             .bookmark_repository
-            .update(&ctx.db, id, found_bookmark.into())
+            .update(&ctx.db, id, dto.into())
             .await
             .map_err(|e| e.to_string())?;
 

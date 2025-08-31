@@ -1,44 +1,52 @@
 import { FiTrash } from 'solid-icons/fi';
 import { HiOutlinePencilSquare } from 'solid-icons/hi';
 import { createSignal, JSXElement } from 'solid-js';
-
 import {
   ContextMenu,
-  ContextMenuCheckboxItem,
   ContextMenuContent,
-  ContextMenuGroup,
-  ContextMenuGroupLabel,
   ContextMenuItem,
   ContextMenuPortal,
-  ContextMenuRadioGroup,
-  ContextMenuRadioItem,
-  ContextMenuSeparator,
-  ContextMenuShortcut,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '~/components/ui/context-menu';
 
-interface BookmarkContextMenu {
+interface BookmarkContextMenuProps {
   children: JSXElement;
+  bookmarkId: number;
+  bookmarkName: string;
+  onRename: (id: number, name: string) => void;
+  onDelete: (id: number) => void;
 }
 
-export function BookmarkContextMenu(props: BookmarkContextMenu) {
-  const [showGitLog, setShowGitLog] = createSignal(true);
-  const [showHistory, setShowHistory] = createSignal(false);
-  const [branch, setBranch] = createSignal('main');
+export function BookmarkContextMenu(props: BookmarkContextMenuProps) {
+  const handleRename = () => {
+    const newName = prompt('Enter new bookmark name:', props.bookmarkName);
+    if (newName && newName.trim()) {
+      props.onRename(props.bookmarkId, newName.trim());
+    }
+  };
+
+  const handleDelete = () => {
+    if (confirm(`Are you sure you want to delete "${props.bookmarkName}"?`)) {
+      props.onDelete(props.bookmarkId);
+    }
+  };
 
   return (
     <ContextMenu>
-      <ContextMenuTrigger class="">{props.children}</ContextMenuTrigger>
+      <ContextMenuTrigger>{props.children}</ContextMenuTrigger>
       <ContextMenuPortal>
-        <ContextMenuContent class="w-48 outline-0 ">
-          <ContextMenuItem class="flex justify-between ">
+        <ContextMenuContent class="w-48 outline-0">
+          <ContextMenuItem
+            class="flex justify-between items-center cursor-pointer"
+            onClick={handleRename}
+          >
             <span>Rename</span>
             <HiOutlinePencilSquare />
           </ContextMenuItem>
-          <ContextMenuItem class="flex justify-between">
+          <ContextMenuItem
+            class="flex justify-between items-center cursor-pointer text-red-400 hover:text-red-300"
+            onClick={handleDelete}
+          >
             <span>Delete</span>
             <FiTrash />
           </ContextMenuItem>

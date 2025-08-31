@@ -2,6 +2,8 @@ import { createSignal, createResource } from 'solid-js';
 import { api } from '../rpc';
 import { SearchResult } from '../types';
 
+const logstring = '@useGroupBookmarks';
+
 export function useGroupBookmarks() {
   const [selectedGroupId, setSelectedGroupId] = createSignal<number | null>(
     null
@@ -65,6 +67,50 @@ export function useGroupBookmarks() {
     }
   };
 
+  const updateBookmark = async (
+    id: number,
+    groupId: number,
+    name?: string,
+    isFavorite?: boolean,
+    tags?: string,
+    url?: string
+  ) => {
+    try {
+      const result = await api.mutation([
+        'bookmark.update',
+        {
+          group_id: groupId,
+          id,
+          name: name ?? '',
+          is_favorite: isFavorite ?? false,
+          tags: tags ?? '',
+          url: url ?? '',
+        },
+      ]);
+
+      console.log(`${logstring}::Updated bookmark successfully`, result);
+
+      refetch();
+    } catch (error) {
+      console.error(`${logstring}::Error updating group bookmarks:`, error);
+      throw error;
+    }
+  };
+
+  const deleteBookmark = async (id: number) => {
+    console.log(`${logstring}::delete bookmark`, id);
+    try {
+      const result = await api.mutation(['bookmark.delete', id]);
+
+      console.log(`${logstring}::Deleted bookmark successfully`, result);
+
+      refetch();
+    } catch (error) {
+      console.error(`${logstring}::Error deleting bookmark: `, error);
+      throw error;
+    }
+  };
+
   const selectGroup = (groupId: number) => {
     console.log('📂 Selecting group:', groupId);
     setSelectedGroupId(groupId);
@@ -94,6 +140,8 @@ export function useGroupBookmarks() {
     error: bookmarks.error,
     hasBookmarks: () => (bookmarks || []).length > 0,
     createBookmark,
+    updateBookmark,
+    deleteBookmark,
     selectWorkspace,
   };
 }

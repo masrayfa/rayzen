@@ -47,6 +47,8 @@ const App: Component = () => {
   const {
     bookmarks: groupBookmarksList,
     createBookmark,
+    updateBookmark,
+    deleteBookmark,
     clearSelection,
     error: bookmarksError,
     loading: bookmarksLoading,
@@ -355,8 +357,6 @@ const App: Component = () => {
     }
   };
 
-  const handleUpdateBookmark = (bookmark: BookmarkDto) => {};
-
   const handleWorkspaceSelect = (id: number) => {
     console.log('🏢 Selecting workspace:', id);
     setSelectedWorkspaceId(id);
@@ -428,6 +428,24 @@ const App: Component = () => {
       }
     } catch (error) {
       console.error('❌ Error creating bookmark:', error);
+    }
+  };
+
+  const handleUpdateBookmark = (bookmark: BookmarkDto) => {};
+
+  const handleRenameBookmark = async (id: number, name: string) => {
+    try {
+      await updateBookmark(id, selectedGroup()?.id ?? 0, name);
+    } catch (error) {
+      console.error('❌ Error updating bookmark:', error);
+    }
+  };
+
+  const handleDeleteBookmark = async (id: number) => {
+    try {
+      await deleteBookmark(id);
+    } catch (error) {
+      console.error(`Error deleting boomark`, error);
     }
   };
 
@@ -685,17 +703,17 @@ const App: Component = () => {
                         selectedGroupId={selectedGroup()?.id}
                       />
                     </div>
-                    <BookmarkContextMenu>
-                      <GroupBookmarksList
-                        group={selectedGroup()}
-                        bookmarks={groupBookmarksList() || []}
-                        loading={bookmarksLoading}
-                        error={bookmarksError}
-                        onClose={handleCloseGroupBookmarks}
-                        onBookmarkSelect={handleBookmarkSelect}
-                        onUpdateBookmark={handleUpdateBookmark}
-                      />
-                    </BookmarkContextMenu>
+                    <GroupBookmarksList
+                      group={selectedGroup()}
+                      bookmarks={groupBookmarksList() || []}
+                      loading={bookmarksLoading}
+                      error={bookmarksError}
+                      onClose={handleCloseGroupBookmarks}
+                      onBookmarkSelect={handleBookmarkSelect}
+                      onUpdateBookmark={handleUpdateBookmark}
+                      onRenameBookmark={handleRenameBookmark}
+                      onDeleteBookmark={handleDeleteBookmark}
+                    />
                   </div>
                 </Show>
 
