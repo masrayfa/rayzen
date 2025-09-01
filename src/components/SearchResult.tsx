@@ -1,5 +1,6 @@
 import { Component, For, createSignal, createEffect } from 'solid-js';
 import { SearchResult } from '../types';
+import { toast } from 'solid-sonner';
 
 interface SearchResultsProps {
   results: SearchResult[];
@@ -59,7 +60,10 @@ const SearchResults: Component<SearchResultsProps> = (props) => {
                     ? 'bg-white/10'
                     : 'hover:bg-white/20'
                 }`}
-                onClick={() => props.onSelectItem(result)}
+                onClick={() => {
+                  props.onSelectItem(result);
+                  toast('Link is copied to clipboard');
+                }}
               >
                 <div class="flex items-center space-x-3">
                   <span class="text-xl">{getTypeIcon(result.type)}</span>
@@ -72,7 +76,7 @@ const SearchResults: Component<SearchResultsProps> = (props) => {
                         <span class="text-yellow-400">⭐</span>
                       )}
                     </div>
-                    <p class="text-gray-400 text-sm truncate">{'subtitle'}</p>
+                    <p class="text-gray-400 text-sm truncate">{result.url}</p>
                   </div>
                   <div
                     class={`text-xs uppercase font-medium ${getTypeColor(
